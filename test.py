@@ -160,8 +160,6 @@ async def main():
 
     html_content = HtmlBuilder.build(
         collected=collected,
-        backgroundBytes=b"",
-        backgroundMime="image/webp",
         avatarBytes=avatar_bytes,
     )
 
