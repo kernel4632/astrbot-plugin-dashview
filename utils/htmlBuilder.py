@@ -5,13 +5,14 @@
 1. 读取主模板、宏模板、CSS 文件
 2. 去掉模板里依赖外部文件的部分，比如外部 JS、外部 CSS
 3. 把 CSS 直接写进 <style>，让页面不再依赖额外样式文件
-4. 把字体和头像转成 base64，直接塞进 HTML
+4. 处理头像资源，把头像直接塞进 HTML
 5. 注册模板里会用到的过滤器
 6. 用 collected 数据渲染模板，返回最终 HTML
 
 你可以把它理解成一个“网页打包器”：
-原本页面需要模板文件、CSS 文件、字体文件、头像接口、JS 文件才能完整显示；
-经过这里处理后，最终只返回一个 HTML 字符串，适合截图、导出、静态展示、无网络环境展示。
+原本页面需要模板文件、CSS 文件、头像接口、JS 文件才能完整显示；
+经过这里处理后，最终只返回一个 HTML 字符串，适合截图、导出、静态展示。
+现在字体改成了 CDN 方案，页面会优先加载远程中文字体，加载失败时再回退到系统字体。
 """
 
 from __future__ import annotations
@@ -28,18 +29,14 @@ class HtmlBuilder:
     root = Path(__file__).parent.parent
     templateFolder = root / "resources" / "templates"
     cssFile = root / "resources" / "index.css"
-    fontsFolder = root / "resources" / "fonts"
     defaultAvatarFile = root / "resources" / "avatar.jpg"
     pageWidth = 900
+    fontImport = '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap");'
     defaultConfig = {
         "ps_default_components": ["header", "resources", "services"],
         "ps_default_additional_css": [],
         "ps_default_additional_script": [],
     }
-    fontFiles = [
-        ("HarmonyOS Sans SC", 400, "HarmonyOS_Sans_Regular.ttf"),
-        ("HarmonyOS Sans SC", 700, "HarmonyOS_Sans_Bold.ttf"),
-    ]
 
     @classmethod
     def build(
@@ -87,28 +84,12 @@ class HtmlBuilder:
 
     @classmethod
     def inlineCss(cls, indexText: str, cssText: str) -> str:
-        fontCss = cls.buildFontCss()
         pageFixCss = f"html,body{{margin:0;padding:0;width:{cls.pageWidth}px;}}"
-        styleTag = f"<style>\n{fontCss}\n{cssText}\n{pageFixCss}\n</style>"
+        styleTag = f"<style>\n{cls.fontImport}\n{cssText}\n{pageFixCss}\n</style>"
         return indexText.replace(
             '<link rel="stylesheet" href="/default/res/css/index.css" />',
             styleTag,
         )
-
-    @classmethod
-    def buildFontCss(cls) -> str:
-        cssParts: list[str] = []
-
-        for familyName, fontWeight, fileName in cls.fontFiles:
-            fontPath = cls.fontsFolder / fileName
-            if not fontPath.exists():
-                continue
-
-            fontBytes = fontPath.read_bytes()
-            fontBase64 = base64.b64encode(fontBytes).decode("ascii")
-            cssParts.append(f"@font-face {{font-family: '{familyName}';font-style: normal;font-weight: {fontWeight};font-display: swap;src: url(data:font/ttf;base64,{fontBase64}) format('truetype');}}")
-
-        return "\n".join(cssParts)
 
     @classmethod
     def inlineAvatar(cls, macrosText: str, avatarBytes: Optional[bytes] = None) -> str:

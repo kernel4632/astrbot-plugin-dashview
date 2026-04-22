@@ -60,8 +60,9 @@ def build_resource_cards(computer):
             "percent_value": round(cpu_percent, 1),
             "percent_text": format_percent(cpu_percent),
             "value": format_percent(cpu_percent),
-            "detail": f"逻辑核心 {cpu.get('logicalCount') or os.cpu_count() or 0}",
-            "color": pick_meter_color(cpu_percent),
+            "detail": "当前处理器占用",
+            "color": "cyan",
+            "wave": "cyan",
         },
         {
             "name": "内存",
@@ -70,7 +71,8 @@ def build_resource_cards(computer):
             "percent_text": format_percent(memory_percent),
             "value": format_percent(memory_percent),
             "detail": f"{HtmlBuilder.autoConvertUnit(to_number(memory.get('used'), 0))} / {HtmlBuilder.autoConvertUnit(to_number(memory.get('total'), 0))}",
-            "color": pick_meter_color(memory_percent),
+            "color": "mint",
+            "wave": "mint",
         },
         {
             "name": "磁盘",
@@ -79,9 +81,23 @@ def build_resource_cards(computer):
             "percent_text": format_percent(disk_percent),
             "value": format_percent(disk_percent),
             "detail": f"{HtmlBuilder.autoConvertUnit(to_number(disk.get('used'), 0))} / {HtmlBuilder.autoConvertUnit(to_number(disk.get('total'), 0))}",
-            "color": pick_meter_color(disk_percent),
+            "color": "purple",
+            "wave": "purple",
         },
     ]
+
+
+def build_service_message(service, is_ok):
+    message = service.get("message") or "无额外说明"
+    status_code = service.get("statusCode")
+
+    if is_ok and status_code in {401, 403, 405}:
+        return "服务在线，但限制了直接探测"
+
+    if is_ok:
+        return "服务在线"
+
+    return message
 
 
 def build_services(services):
@@ -90,7 +106,6 @@ def build_services(services):
     for index, service in enumerate(services):
         is_ok = service.get("ok") is True
         status_code = service.get("statusCode")
-        message = service.get("message") or "无额外说明"
         duration = service.get("durationMs")
         color = ["cyan", "purple", "mint", "rose"][index % 4]
 
@@ -102,8 +117,8 @@ def build_services(services):
                 "status_text": "正常" if is_ok else "异常",
                 "status_color": "green" if is_ok else "rose",
                 "ping_text": f"{round(duration, 2)}ms" if duration is not None else "无耗时",
-                "code_text": f"HTTP {status_code}" if status_code is not None else "无状态码",
-                "message": message,
+                "code_text": "可访问" if is_ok else (f"HTTP {status_code}" if status_code is not None else "访问失败"),
+                "message": build_service_message(service, is_ok),
                 "color": color,
                 "icon": "API",
             }
@@ -112,15 +127,17 @@ def build_services(services):
     return mapped
 
 
-def build_system_details(computer):
-    return [
-        {"label": "主机名", "value": computer.get("hostName") or "未知"},
-        {"label": "操作系统", "value": computer.get("system") or "未知"},
-        {"label": "系统版本", "value": computer.get("systemVersion") or "未知"},
-        {"label": "架构类型", "value": computer.get("machine") or "未知"},
-        {"label": "Python 版本", "value": computer.get("pythonVersion") or "未知"},
-        {"label": "开机时间", "value": computer.get("bootTime") or "未知"},
-    ]
+def build_system_details(computer, summary):
+    is_all_ok = summary.get("serviceFailCount", 0) == 0
+    status_text = "阿柯牛逼" if is_all_ok else "阿柯死了"
+
+    return {
+        "cards": [
+            {"label": "运行环境", "value": computer.get("system") or "未知"},
+            {"label": "开机时间", "value": computer.get("bootTime") or "未知"},
+        ],
+        "status_text": status_text,
+    }
 
 
 async def main():
@@ -155,7 +172,7 @@ async def main():
         "overview": build_overview(summary),
         "resource_cards": build_resource_cards(computer),
         "services_status": build_services(services),
-        "system_details": build_system_details(computer),
+        "system_details": build_system_details(computer, summary),
     }
 
     html_content = HtmlBuilder.build(

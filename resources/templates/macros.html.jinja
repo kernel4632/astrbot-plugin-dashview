@@ -31,7 +31,7 @@
       </div>
       <div class="meter-value">{{ item.value }}</div>
       <div class="meter-detail">{{ item.detail }}</div>
-      <div class="meter-wave meter-wave-{{ item.color }} meter-wave-{{ loop.index }}"></div>
+      <div class="meter-wave meter-wave-{{ item.wave }} meter-wave-{{ loop.index }}"></div>
     </div>
     {% endfor %}
   </div>
@@ -61,7 +61,6 @@
           </div>
         </div>
         <div class="service-foot">
-          <div class="service-code">{{ service.code_text }}</div>
           <div class="service-message">{{ service.message }}</div>
         </div>
       </div>
@@ -77,12 +76,15 @@
       </div>
     </div>
     <div class="info-grid">
-      {% for item in d.system_details %}
+      {% for item in d.system_details.cards %}
       <div class="info-item">
         <div class="info-label">{{ item.label }}</div>
         <div class="info-value">{{ item.value }}</div>
       </div>
       {% endfor %}
+      <div class="info-item info-summary">
+        <div class="info-summary-text">{{ d.system_details.status_text }}</div>
+      </div>
     </div>
   </div>
 </div>

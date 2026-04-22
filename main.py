@@ -75,7 +75,7 @@ class PicStatusPlugin(Star):
                 "overview": build_overview(summary),
                 "resource_cards": build_resource_cards(computer),
                 "services_status": build_services(services),
-                "system_details": build_system_details(computer),
+                "system_details": build_system_details(computer, summary),
             }
 
             logger.info("开始生成单文件 HTML")
