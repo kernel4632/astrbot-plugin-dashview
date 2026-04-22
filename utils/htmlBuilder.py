@@ -101,13 +101,13 @@ class HtmlBuilder:
     root = Path(__file__).parent
 
     # 宏模板和主页模板都放在这里。
-    templateFolder = root / "templates" / "default" / "res" / "templates"
+    templateFolder = root / "resources" / "templates"
 
     # 默认 CSS 文件放在这里。
-    cssFile = root / "templates" / "default" / "res" / "css" / "index.css"
+    cssFile = root / "resources" / "css" / "index.css"
 
     # 默认头像文件放在这里。如果调用时没有传头像，就尝试使用它。
-    defaultAvatarFile = root / "res" / "assets" / "default_avatar.webp"
+    defaultAvatarFile = root / "resources" / "assets" / "default_avatar.webp"
 
     # 这个宽度不是随便写的。原始代码已经明确说明：
     # 固定为 900 可以避免 full_page 截图时右侧出现白边。
@@ -177,12 +177,10 @@ class HtmlBuilder:
         print(f"HTML 生成完成，长度为 {len(html)} 个字符")
         return html
 
-
     @classmethod
     def readText(cls, filePath: Path) -> str:
         """读取一个 utf-8 文本文件并返回字符串。"""
         return filePath.read_text(encoding="utf-8")
-
 
     @classmethod
     def removeFirstMacroImport(cls, indexText: str) -> str:
@@ -203,7 +201,6 @@ class HtmlBuilder:
 
         return indexText
 
-
     @classmethod
     def fixViewportWidth(cls, indexText: str) -> str:
         """
@@ -218,7 +215,6 @@ class HtmlBuilder:
             f'content="width={cls.pageWidth}, initial-scale=1.0"',
         )
 
-
     @classmethod
     def removeExternalScripts(cls, indexText: str) -> str:
         """
@@ -228,12 +224,7 @@ class HtmlBuilder:
         单文件的重点就是：拿到一个 html 字符串后，不再去请求别的脚本文件。
         所以这里主动删掉初始化脚本、懒加载脚本、插件加载脚本。
         """
-        return (
-            indexText.replace('<script src="/js/init-global.js"></script>', "")
-            .replace('<script src="/js/lazy-load.js"></script>', "")
-            .replace('<script src="/js/load-plugin.js"></script>', "")
-        )
-
+        return indexText.replace('<script src="/js/init-global.js"></script>', "").replace('<script src="/js/lazy-load.js"></script>', "").replace('<script src="/js/load-plugin.js"></script>', "")
 
     @classmethod
     def inlineCss(cls, indexText: str, cssText: str) -> str:
@@ -251,7 +242,6 @@ class HtmlBuilder:
             styleTag,
         )
 
-
     @classmethod
     def inlineBackground(cls, indexText: str, backgroundBytes: bytes, backgroundMime: str) -> str:
         """
@@ -267,13 +257,9 @@ class HtmlBuilder:
             return indexText
 
         backgroundBase64 = base64.b64encode(backgroundBytes).decode("ascii")
-        backgroundStyle = (
-            f'<div class="main-background" '
-            f'style="background-image:url(\'data:{backgroundMime};base64,{backgroundBase64}\')">'
-        )
+        backgroundStyle = f'<div class="main-background" style="background-image:url(\'data:{backgroundMime};base64,{backgroundBase64}\')">'
 
         return indexText.replace('<div class="main-background">', backgroundStyle)
-
 
     @classmethod
     def inlineAvatar(cls, macrosText: str, avatarBytes: Optional[bytes]) -> str:
@@ -308,7 +294,6 @@ class HtmlBuilder:
         print("头像资源处理完成")
         return replacedText
 
-
     @classmethod
     def readDefaultAvatarBytes(cls) -> bytes:
         """
@@ -321,7 +306,6 @@ class HtmlBuilder:
             return cls.defaultAvatarFile.read_bytes()
         except Exception:
             return b""
-
 
     @classmethod
     def detectImageMime(cls, imageBytes: bytes) -> str:
@@ -348,7 +332,6 @@ class HtmlBuilder:
 
         return "image/png"
 
-
     @classmethod
     def joinMacrosAndIndex(cls, macrosText: str, indexText: str) -> str:
         """
@@ -359,7 +342,6 @@ class HtmlBuilder:
         这样 from_string() 就能一次性渲染完整模板。
         """
         return macrosText + "\n" + indexText
-
 
     @classmethod
     def createTemplateEnv(cls) -> jinja2.Environment:
@@ -382,7 +364,6 @@ class HtmlBuilder:
         )
         return env
 
-
     @classmethod
     def percentToColor(cls, percent: float) -> str:
         """
@@ -400,7 +381,6 @@ class HtmlBuilder:
             return "prog-medium"
 
         return "prog-high"
-
 
     @classmethod
     def autoConvertUnit(
@@ -436,7 +416,6 @@ class HtmlBuilder:
         space = " " if withSpace else ""
         return f"{number:.0f}{space}{units[index]}{suffix}"
 
-
     @classmethod
     def formatCpuFreq(cls, freq: Any) -> str:
         """
@@ -468,7 +447,6 @@ class HtmlBuilder:
             return f"{currentText} / {formatSingleValue(maxValue)}"
 
         return currentText
-
 
     @classmethod
     def brFilter(cls, value: Any) -> Markup:
