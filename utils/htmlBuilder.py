@@ -98,7 +98,7 @@ class HtmlBuilder:
     """
 
     # 这里保存当前文件所在目录，后续读模板和资源都从这里出发。
-    root = Path(__file__).parent
+    root = Path(__file__).parent.parent
 
     # 宏模板和主页模板都放在这里。
     templateFolder = root / "resources" / "templates"
