@@ -14,9 +14,9 @@
 经过这个文件处理后，最终只剩一个 HTML 字符串，更适合 AstrBot 截图，也更适合本地直接打开预览。
 
 最常见的调用方式：
-HtmlBuilder.build(collected=data)
-HtmlBuilder.build(collected=data, avatarBytes=avatarBytes)
-HtmlBuilder.autoConvertUnit(1073741824)
+Render.build(collected=data)
+Render.build(collected=data, avatarBytes=avatarBytes)
+Render.autoConvertUnit(1073741824)
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ import jinja2
 from markupsafe import Markup
 
 
-class HtmlBuilder:
+class Render:
     """这个对象专门负责把页面资源整理成单文件 HTML。"""
 
     root = Path(__file__).parent.parent

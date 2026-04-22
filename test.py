@@ -4,7 +4,7 @@
 它只做四件事：
 1. 调用 Monitor.collect() 采集真实数据
 2. 调用 Data.buildCollected() 整理模板数据
-3. 调用 HtmlBuilder.build() 生成单文件 HTML
+3. 调用 Render.build() 生成单文件 HTML
 4. 把 HTML 写到 output_test.html，方便你本地直接打开查看效果
 
 如果你改了模板、CSS、文案、卡片结构，最方便的验证方式就是运行这个文件。
@@ -18,8 +18,8 @@ import asyncio
 from pathlib import Path
 
 from data import Data
-from utils.htmlBuilder import HtmlBuilder
 from utils.monitor import Monitor
+from utils.render import Render
 
 
 ROOT = Path(__file__).parent
@@ -67,7 +67,7 @@ async def main():
     summary = result["summary"]
     avatarBytes = readAvatar()
     collected = Data.buildCollected(computer=computer, services=services, summary=summary)
-    html = HtmlBuilder.build(collected=collected, avatarBytes=avatarBytes)
+    html = Render.build(collected=collected, avatarBytes=avatarBytes)
     OUTPUT.write_text(html, encoding="utf-8")
     print(f"\nHTML文件已生成: {OUTPUT}")
     printResult(computer=computer, services=services, summary=summary)

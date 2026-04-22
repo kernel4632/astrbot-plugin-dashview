@@ -8,10 +8,10 @@
 
 如果你想看“页面要显示哪些内容”，去看 data.py。
 如果你想看“怎么检测系统和服务”，去看 utils/monitor.py。
-如果你想看“怎么把模板打包成单文件 HTML”，去看 utils/htmlBuilder.py。
+如果你想看“怎么把模板打包成单文件 HTML”，去看 utils/render.py。
 
 最常见的调用流程是这样的：
-用户发送“运行状态” → 这里收到命令 → Monitor.collect() 拿到真实数据 → Data.buildCollected() 整理成模板需要的结构 → HtmlBuilder.build() 生成单文件 HTML → html_render() 渲染图片返回。
+用户发送“运行状态” → 这里收到命令 → Monitor.collect() 拿到真实数据 → Data.buildCollected() 整理成模板需要的结构 → Render.build() 生成单文件 HTML → html_render() 渲染图片返回。
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
 
 from .data import Data
-from .utils.htmlBuilder import HtmlBuilder
 from .utils.monitor import Monitor
+from .utils.render import Render
 
 
 PLUGIN_NAME: Final[str] = "astrbot_plugin_dashview"
@@ -100,7 +100,7 @@ class DashViewPlugin(Star):
             collected = Data.buildCollected(computer=computer, services=services, summary=summary)
 
             logger.info("开始生成单文件 HTML")
-            html = HtmlBuilder.build(collected=collected, avatarBytes=avatarBytes)
+            html = Render.build(collected=collected, avatarBytes=avatarBytes)
 
             logger.info("开始调用 AstrBot 渲染器")
             imageToSend = await self.html_render(

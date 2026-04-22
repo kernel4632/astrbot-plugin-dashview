@@ -21,9 +21,9 @@ from __future__ import annotations
 from typing import Any
 
 try:
-    from .utils.htmlBuilder import HtmlBuilder
+    from .utils.render import Render
 except ImportError:
-    from utils.htmlBuilder import HtmlBuilder
+    from utils.render import Render
 
 
 class Data:
@@ -92,7 +92,7 @@ class Data:
                 "percent_value": round(memoryPercent, 1),
                 "percent_text": cls.formatPercent(memoryPercent),
                 "value": cls.formatPercent(memoryPercent),
-                "detail": f"{HtmlBuilder.autoConvertUnit(cls.toNumber(memory.get('used'), 0))} / {HtmlBuilder.autoConvertUnit(cls.toNumber(memory.get('total'), 0))}",
+                "detail": f"{Render.autoConvertUnit(cls.toNumber(memory.get('used'), 0))} / {Render.autoConvertUnit(cls.toNumber(memory.get('total'), 0))}",
                 "color": "mint",
                 "wave": "mint",
             },
@@ -102,7 +102,7 @@ class Data:
                 "percent_value": round(diskPercent, 1),
                 "percent_text": cls.formatPercent(diskPercent),
                 "value": cls.formatPercent(diskPercent),
-                "detail": f"{HtmlBuilder.autoConvertUnit(cls.toNumber(disk.get('used'), 0))} / {HtmlBuilder.autoConvertUnit(cls.toNumber(disk.get('total'), 0))}",
+                "detail": f"{Render.autoConvertUnit(cls.toNumber(disk.get('used'), 0))} / {Render.autoConvertUnit(cls.toNumber(disk.get('total'), 0))}",
                 "color": "purple",
                 "wave": "purple",
             },
