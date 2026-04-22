@@ -1,7 +1,14 @@
 [project]
-name = "pic"
-version = "0.1.0"
-description = "Add your description here"
+name = "astrbot-plugin-dashview"
+version = "1.0.0"
+description = "AstrBot 的运行状态仪表盘插件，使用单文件 HTML 生成精致监控面板。"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.24",
+    "jinja2>=3.1",
+    "markupsafe>=2.1",
+    "pillow>=10.0",
+    "psutil>=5.9",
+    "py-cpuinfo>=9.0",
+]

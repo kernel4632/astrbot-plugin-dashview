@@ -29,17 +29,17 @@ from .utils.htmlBuilder import HtmlBuilder
 from .utils.monitor import Monitor
 
 
-PLUGIN_NAME: Final[str] = "astrbot_plugin_picstatus"
+PLUGIN_NAME: Final[str] = "astrbot_plugin_dashview"
 ALIASES: Final[set[str]] = {"状态", "zt", "yxzt", "status", "运行状态"}
 
 
 @register(
     PLUGIN_NAME,
     "Kernyr",
-    "以图片形式显示当前设备的运行状态",
+    "以图片形式显示当前设备的运行状态仪表盘",
     "1.0.0",
 )
-class PicStatusPlugin(Star):
+class DashViewPlugin(Star):
     """
     这个对象就是 AstrBot 真正会加载的插件对象。
 
@@ -56,11 +56,11 @@ class PicStatusPlugin(Star):
 
     async def initialize(self):
         """这个函数在插件加载时运行，用来把配置修正成可安全读取的结构。"""
-        logger.info("开始初始化 PicStatus 插件")
+        logger.info("开始初始化 DashView 插件")
         config = getattr(self, "config", None)
 
         if not (hasattr(config, "get") and hasattr(config, "__setitem__")):
-            logger.info("PicStatus 插件初始化完成")
+            logger.info("DashView 插件初始化完成")
             return
 
         if not isinstance(config.get("avatar"), dict):
@@ -73,9 +73,9 @@ class PicStatusPlugin(Star):
             try:
                 config.save_config()  # 有保存能力时立刻落盘，这样下次启动就不会重复修正。
             except Exception as error:
-                logger.warning(f"PicStatus: 保存配置失败: {error}")
+                logger.warning(f"DashView: 保存配置失败: {error}")
 
-        logger.info("PicStatus 插件初始化完成")
+        logger.info("DashView 插件初始化完成")
 
     @filter.command("运行状态", alias=ALIASES)
     async def cmd_status(self, event: AstrMessageEvent):
@@ -141,7 +141,7 @@ class PicStatusPlugin(Star):
             try:
                 return Path(avatarLocalPath.strip()).read_bytes()  # 本地路径最快也最稳定，所以优先读它。
             except Exception as error:
-                logger.warning(f"PicStatus: 读取本地头像失败 {avatarLocalPath}: {error}")
+                logger.warning(f"DashView: 读取本地头像失败 {avatarLocalPath}: {error}")
 
         avatarUrl = avatarConfig.get("avatar_url") or config.get("avatar_url")
         if isinstance(avatarUrl, str) and avatarUrl.strip():
@@ -167,9 +167,9 @@ class PicStatusPlugin(Star):
                 logger.info(f"成功获取{name}")
                 return response.content
         except Exception as error:
-            logger.warning(f"PicStatus: 获取{name}失败 {url}: {error}")
+            logger.warning(f"DashView: 获取{name}失败 {url}: {error}")
             return None
 
     async def terminate(self):
         """这个函数在插件卸载时运行，当前只保留日志提示。"""
-        logger.info("PicStatus 插件已卸载")
+        logger.info("DashView 插件已卸载")
