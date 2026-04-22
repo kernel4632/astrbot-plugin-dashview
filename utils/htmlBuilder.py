@@ -257,7 +257,7 @@ class HtmlBuilder:
             return indexText
 
         backgroundBase64 = base64.b64encode(backgroundBytes).decode("ascii")
-        backgroundStyle = f'<div class="main-background" style="background-image:url(\'data:{backgroundMime};base64,{backgroundBase64}\')">'
+        backgroundStyle = f'<div class="main-background" style="background-image:linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08)),url(\'data:{backgroundMime};base64,{backgroundBase64}\');background-size:cover;background-position:center;">'
 
         return indexText.replace('<div class="main-background">', backgroundStyle)
 

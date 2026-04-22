@@ -1,44 +1,131 @@
 import os
 import sys
 import asyncio
-from datetime import datetime
 
-# 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils.htmlBuilder import HtmlBuilder
 from utils.monitor import Monitor
 
 
-def format_uptime(boot_time_str):
-    """计算系统运行时间"""
-    try:
-        boot_time = datetime.strptime(boot_time_str, "%Y-%m-%d %H:%M:%S")
-        now = datetime.now()
-        delta = now - boot_time
-        hours = delta.days * 24 + delta.seconds // 3600
-        minutes = (delta.seconds % 3600) // 60
-        seconds = delta.seconds % 60
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    except:
-        return "00:00:00"
+def to_number(value, default=0):
+    if value is None:
+        return default
+    return value
 
 
-def format_bytes(bytes_value):
-    """格式化字节数"""
-    if bytes_value is None:
-        return "0B"
-    for unit in ["B", "KB", "MB", "GB"]:
-        if bytes_value < 1024:
-            return f"{bytes_value:.1f}{unit}"
-        bytes_value /= 1024
-    return f"{bytes_value:.1f}TB"
+def format_percent(value):
+    if value is None:
+        return "未知"
+    return f"{float(value):.1f}%"
+
+
+def pick_meter_color(percent):
+    percent = to_number(percent)
+    if percent >= 90:
+        return "rose"
+    if percent >= 75:
+        return "orange"
+    if percent >= 55:
+        return "purple"
+    return "cyan"
+
+
+def build_overview(summary):
+    fail_count = summary.get("serviceFailCount", 0)
+    total_count = summary.get("serviceCount", 0)
+
+    if total_count == 0:
+        return {"health_level": "calm", "health_text": "系统状态稳定"}
+    if fail_count == 0:
+        return {"health_level": "good", "health_text": "服务全部正常"}
+    if fail_count < total_count:
+        return {"health_level": "warn", "health_text": "部分服务异常"}
+    return {"health_level": "danger", "health_text": "服务状态异常"}
+
+
+def build_resource_cards(computer):
+    cpu = computer.get("cpu", {})
+    memory = computer.get("memory", {})
+    disk = computer.get("disk", {})
+
+    cpu_percent = float(to_number(cpu.get("percent"), 0))
+    memory_percent = float(to_number(memory.get("percent"), 0))
+    disk_percent = float(to_number(disk.get("percent"), 0))
+
+    return [
+        {
+            "name": "CPU",
+            "icon": "CPU",
+            "percent_value": round(cpu_percent, 1),
+            "percent_text": format_percent(cpu_percent),
+            "value": format_percent(cpu_percent),
+            "detail": f"逻辑核心 {cpu.get('logicalCount') or os.cpu_count() or 0}",
+            "color": pick_meter_color(cpu_percent),
+        },
+        {
+            "name": "内存",
+            "icon": "RAM",
+            "percent_value": round(memory_percent, 1),
+            "percent_text": format_percent(memory_percent),
+            "value": format_percent(memory_percent),
+            "detail": f"{HtmlBuilder.autoConvertUnit(to_number(memory.get('used'), 0))} / {HtmlBuilder.autoConvertUnit(to_number(memory.get('total'), 0))}",
+            "color": pick_meter_color(memory_percent),
+        },
+        {
+            "name": "磁盘",
+            "icon": "SSD",
+            "percent_value": round(disk_percent, 1),
+            "percent_text": format_percent(disk_percent),
+            "value": format_percent(disk_percent),
+            "detail": f"{HtmlBuilder.autoConvertUnit(to_number(disk.get('used'), 0))} / {HtmlBuilder.autoConvertUnit(to_number(disk.get('total'), 0))}",
+            "color": pick_meter_color(disk_percent),
+        },
+    ]
+
+
+def build_services(services):
+    mapped = []
+
+    for index, service in enumerate(services):
+        is_ok = service.get("ok") is True
+        status_code = service.get("statusCode")
+        message = service.get("message") or "无额外说明"
+        duration = service.get("durationMs")
+        color = ["cyan", "purple", "mint", "rose"][index % 4]
+
+        mapped.append(
+            {
+                "name": service.get("name", "未命名服务"),
+                "url": service.get("target") or "未提供目标地址",
+                "status": "good" if is_ok else "danger",
+                "status_text": "正常" if is_ok else "异常",
+                "status_color": "green" if is_ok else "rose",
+                "ping_text": f"{round(duration, 2)}ms" if duration is not None else "无耗时",
+                "code_text": f"HTTP {status_code}" if status_code is not None else "无状态码",
+                "message": message,
+                "color": color,
+                "icon": "API",
+            }
+        )
+
+    return mapped
+
+
+def build_system_details(computer):
+    return [
+        {"label": "主机名", "value": computer.get("hostName") or "未知"},
+        {"label": "操作系统", "value": computer.get("system") or "未知"},
+        {"label": "系统版本", "value": computer.get("systemVersion") or "未知"},
+        {"label": "架构类型", "value": computer.get("machine") or "未知"},
+        {"label": "Python 版本", "value": computer.get("pythonVersion") or "未知"},
+        {"label": "开机时间", "value": computer.get("bootTime") or "未知"},
+    ]
 
 
 async def main():
     print("正在采集真实系统信息...")
 
-    # 调用Monitor获取系统数据
     result = Monitor.collect(
         services=[
             {"name": "超级主核API", "type": "http", "url": "https://api.hujiarong.site/"},
@@ -47,87 +134,54 @@ async def main():
         timeout=5,
     )
 
-    # 构建模板需要的数据格式
     computer = result["computer"]
     services = result["services"]
     summary = result["summary"]
 
-    # 计算运行时间
-    boot_time_str = computer.get("bootTime")
-    system_run_time = format_uptime(boot_time_str) if boot_time_str else "00:00:00"
-
-    # 准备数据
-    collected = {
-        # 头部信息
-        "hostname": computer.get("hostName", "主服务器"),
-        "os_info": f"{computer.get('system', 'Unknown')} ({computer.get('machine', '')})",
-        "time": result["checkedAt"],
-        "astrbot_version": "v1",
-        "system_run_time": system_run_time,
-        # CPU信息
-        "cpu_percent": computer["cpu"].get("percent", 0),
-        "cpu_count": computer["cpu"].get("logicalCount", os.cpu_count() or 1),
-        "cpu_count_logical": computer["cpu"].get("logicalCount", os.cpu_count() or 1),
-        # 内存信息
-        "memory_stat": type("obj", (object,), {"used": computer["memory"].get("used", 0), "total": computer["memory"].get("total", 0), "percent": computer["memory"].get("percent", 0)}),
-        # 磁盘信息
-        "disk_usage": [type("obj", (object,), {"name": computer["disk"].get("path", "/"), "used": computer["disk"].get("used", 0), "total": computer["disk"].get("total", 0), "percent": computer["disk"].get("percent", 0)})],
-        # 其他系统信息
-        "python_version": computer.get("pythonVersion", ""),
-        "system_name": computer.get("system", ""),
-        # 服务状态
-        "services_status": [
-            {"name": s["name"], "url": s.get("target", ""), "type": "api" if "API" in s["name"] else "web", "status": "normal" if s["ok"] else "error", "ping": int(s.get("durationMs", 0)), "availability": 99.99 if s["ok"] else 0, "icon_color": "cyan" if i % 2 == 0 else "purple"} for i, s in enumerate(services)
-        ],
-        # 汇总信息
-        "summary": summary,
-    }
-
-    # 读取背景图和头像
     resources_dir = os.path.join(os.path.dirname(__file__), "resources", "assets")
-    background_path = os.path.join(resources_dir, "default_bg.webp")
     avatar_path = os.path.join(resources_dir, "avatar.webp")
 
-    background_bytes = b""
-    background_mime = "image/webp"
     avatar_bytes = None
 
-    if os.path.exists(background_path):
-        with open(background_path, "rb") as f:
-            background_bytes = f.read()
-        print(f"加载背景图: {background_path}")
-
     if os.path.exists(avatar_path):
-        with open(avatar_path, "rb") as f:
-            avatar_bytes = f.read()
+        with open(avatar_path, "rb") as file:
+            avatar_bytes = file.read()
         print(f"加载头像: {avatar_path}")
 
-    # 渲染HTML
-    html_content = HtmlBuilder.build(collected=collected, backgroundBytes=background_bytes, backgroundMime=background_mime, avatarBytes=avatar_bytes)
+    collected = {
+        "hostname": computer.get("hostName", "主服务器"),
+        "os_info": f"{computer.get('system', 'Unknown')} ({computer.get('machine', '')})",
+        "summary": summary,
+        "overview": build_overview(summary),
+        "resource_cards": build_resource_cards(computer),
+        "services_status": build_services(services),
+        "system_details": build_system_details(computer),
+    }
 
-    # 保存HTML到文件
+    html_content = HtmlBuilder.build(
+        collected=collected,
+        backgroundBytes=b"",
+        backgroundMime="image/webp",
+        avatarBytes=avatar_bytes,
+    )
+
     html_output_path = os.path.join(os.path.dirname(__file__), "output_test.html")
-    with open(html_output_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
-    print(f"\nHTML文件已生成: {html_output_path}")
+    with open(html_output_path, "w", encoding="utf-8") as file:
+        file.write(html_content)
 
-    # 打印采集的真实数据
+    print(f"\nHTML文件已生成: {html_output_path}")
     print("\n=== 采集的真实数据 ===")
-    print(f"检测时间: {result['checkedAt']}")
     print(f"主机名: {computer.get('hostName')}")
-    print(f"系统: {computer.get('system')} {computer.get('machine')}")
-    print(f"本地IP: {computer.get('localIp')}")
+    print(f"系统: {computer.get('system')} {computer.get('systemVersion')} {computer.get('machine')}")
     print(f"Python版本: {computer.get('pythonVersion')}")
     print(f"开机时间: {computer.get('bootTime')}")
-    print(f"运行时长: {system_run_time}")
-    print(f"\nCPU使用率: {computer['cpu'].get('percent')}%")
-    print(f"CPU核心数: {computer['cpu'].get('logicalCount')}")
-    print(f"内存使用率: {computer['memory'].get('percent')}% ({format_bytes(computer['memory'].get('used'))} / {format_bytes(computer['memory'].get('total'))})")
-    print(f"磁盘使用率: {computer['disk'].get('percent')}% ({format_bytes(computer['disk'].get('used'))} / {format_bytes(computer['disk'].get('total'))})")
-    print(f"\n服务监控 ({summary['serviceCount']}个):")
-    for service in services:
-        status = "正常" if service["ok"] else "失败"
-        print(f"  - {service['name']}: {status} ({service.get('durationMs', 0)}ms)")
+    print(f"CPU信息: {computer.get('cpu')}")
+    print(f"内存信息: {computer.get('memory')}")
+    print(f"磁盘信息: {computer.get('disk')}")
+    print(f"服务摘要: {summary}")
+
+    for item in services:
+        print(f"服务 {item.get('name')}: ok={item.get('ok')} statusCode={item.get('statusCode')} target={item.get('target')} message={item.get('message')}")
 
 
 if __name__ == "__main__":

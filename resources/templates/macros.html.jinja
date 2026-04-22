@@ -1,137 +1,71 @@
-{# 马卡龙风格仪表盘组件 #}
-
-{# 头部标题组件 #}
 {% macro header(d) %}
-<div class="header-card">
-  <div class="header-left">
-    <div class="logo">
-      <img class="avatar" data-src="/api/bot_avatar/{{ info.self_id }}" alt="Avatar" />
-    </div>
-    <div class="header-info">
-      <h1 class="title">AstrBot 运行状态</h1>
-      <div class="header-meta">
-        <span class="meta-item">{{ d.hostname }}</span>
-        <span class="meta-divider">|</span>
-        <span class="meta-item">运行 {{ d.system_run_time }}</span>
-        <span class="meta-divider">|</span>
-        <span class="meta-item">{{ d.os_info }}</span>
+<div class="hero-card">
+  <div class="hero-main">
+    <img class="hero-avatar" data-src="/api/bot_avatar/{{ info.self_id }}" alt="Avatar" />
+    <div class="hero-content">
+      <div class="hero-kicker">Status Dashboard</div>
+      <h1 class="hero-title">阿柯AKer</h1>
+      <div class="hero-meta">
+        <span class="hero-chip pink">{{ d.hostname }}</span>
+        <span class="hero-chip purple">{{ d.os_info }}</span>
       </div>
     </div>
   </div>
-  <div class="header-right">
-    <div class="time-display">{{ d.time }}</div>
-    <div class="version">{{ d.astrbot_version }}</div>
+  <div class="hero-side">
+    <div class="hero-health health-{{ d.overview.health_level }}">{{ d.overview.health_text }}</div>
   </div>
 </div>
 {% endmacro %}
 
-{# 资源概览卡片 - 横向布局 #}
-{% macro resources_overview(d) %}
-{% set ram_used = d.memory_stat.used | auto_convert_unit %}
-{% set ram_total = d.memory_stat.total | auto_convert_unit %}
-{% set disk_used = d.disk_usage[0].used | auto_convert_unit if d.disk_usage else '0' %}
-{% set disk_total = d.disk_usage[0].total | auto_convert_unit if d.disk_usage else '0' %}
-<div class="chart-card">
-  <div class="card-header">
-    <h3 class="card-title">系统状态</h3>
+{% macro overview(d) %}
+<div class="panel-card overview-panel">
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">Resource Overview</div>
+      <h3 class="section-title">资源总览</h3>
+    </div>
   </div>
-  <div class="resources-card">
-    <div class="resource-item">
-      <div class="resource-header">
-        <div class="resource-icon cyan">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-            <rect x="9" y="9" width="6" height="6"></rect>
-            <line x1="9" y1="15" x2="15" y2="15"></line>
-          </svg>
-        </div>
-        <span class="resource-title">CPU</span>
+  <div class="meter-list">
+    {% for item in d.resource_cards %}
+    <div class="meter-card meter-{{ item.color }}">
+      <div class="meter-top">
+        <div class="meter-icon">{{ item.icon }}</div>
+        <div class="meter-name">{{ item.name }}</div>
+        <div class="meter-percent">{{ item.percent_text }}</div>
       </div>
-      <div class="resource-body">
-        <div class="resource-value-row">
-          <span class="resource-value">{{ d.cpu_percent | round(1) }}</span>
-          <span class="resource-unit">%</span>
-        </div>
-        <div class="resource-bar">
-          <div class="resource-progress {% if d.cpu_percent > 80 %}red{% elif d.cpu_percent > 60 %}orange{% else %}cyan{% endif %}" style="width: {{ d.cpu_percent }}%"></div>
-        </div>
-        <span class="resource-detail">{{ d.cpu_count }}核 {{ d.cpu_count_logical }}线程</span>
-      </div>
+      <div class="meter-value">{{ item.value }}</div>
+      <div class="meter-detail">{{ item.detail }}</div>
+      <div class="meter-bar"><div class="meter-bar-fill meter-bar-{{ item.color }}" style="width: {{ item.percent_value }}%"></div></div>
     </div>
-    <div class="resource-item">
-      <div class="resource-header">
-        <div class="resource-icon green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="1" y="3" width="15" height="13"></rect>
-            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-            <circle cx="5.5" cy="18.5" r="2.5"></circle>
-            <circle cx="18.5" cy="18.5" r="2.5"></circle>
-          </svg>
-        </div>
-        <span class="resource-title">内存</span>
-      </div>
-      <div class="resource-body">
-        <div class="resource-value-row">
-          <span class="resource-value">{{ d.memory_stat.percent | round(1) }}</span>
-          <span class="resource-unit">%</span>
-        </div>
-        <div class="resource-bar">
-          <div class="resource-progress {% if d.memory_stat.percent > 85 %}red{% elif d.memory_stat.percent > 70 %}orange{% else %}green{% endif %}" style="width: {{ d.memory_stat.percent }}%"></div>
-        </div>
-        <span class="resource-detail">{{ ram_used }} / {{ ram_total }}</span>
-      </div>
-    </div>
-    <div class="resource-item">
-      <div class="resource-header">
-        <div class="resource-icon purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-          </svg>
-        </div>
-        <span class="resource-title">磁盘</span>
-      </div>
-      <div class="resource-body">
-        <div class="resource-value-row">
-          <span class="resource-value">{{ d.disk_usage[0].percent | round(1) if d.disk_usage else 0 }}</span>
-          <span class="resource-unit">%</span>
-        </div>
-        <div class="resource-bar">
-          <div class="resource-progress {% if (d.disk_usage[0].percent if d.disk_usage else 0) > 90 %}red{% elif (d.disk_usage[0].percent if d.disk_usage else 0) > 75 %}orange{% else %}purple{% endif %}" style="width: {{ d.disk_usage[0].percent if d.disk_usage else 0 }}%"></div>
-        </div>
-        <span class="resource-detail">{{ disk_used }} / {{ disk_total }}</span>
-      </div>
-    </div>
+    {% endfor %}
   </div>
 </div>
 {% endmacro %}
 
-{# 服务监控卡片 #}
 {% macro services_monitor(d) %}
-<div class="services-card">
-  <div class="card-header">
-    <h3 class="card-title">服务监控</h3>
+<div class="panel-card services-panel">
+  <div class="section-head">
+    <div>
+      <div class="section-kicker">Service Monitor</div>
+      <h3 class="section-title">服务监控</h3>
+    </div>
   </div>
-  <div class="services-grid">
+  <div class="service-list">
     {% for service in d.services_status %}
-    <div class="service-card status-{{ service.status }}">
-      <div class="service-icon {{ service.icon_color }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          {% if service.type == 'web' %}<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>{% endif %}
-          {% if service.type == 'api' %}<path d="M12 20h9M9 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>{% endif %}
-          {% if service.type == 'db' %}<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 12l18 0"></path>{% endif %}
-          {% if service.type == 'mail' %}<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22 6 12 13 2 6"></polyline>{% endif %}
-          {% if service.type == 'cdn' %}<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>{% endif %}
-          {% if service.type == 'backup' %}<path d="M12 20h9M9 11H7a2 2 0 01-2-2V5a2 2 0 012-2h6l2 2h9a2 2 0 012 2v5.5"></path><polyline points="15 11 9 17 4 17"></polyline>{% endif %}
-          {% if service.type == 'user' %}<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>{% endif %}
-          {% if service.type == 'shop' %}<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>{% endif %}
-          {% if service.type == 'default' %}<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>{% endif %}
-        </svg>
-      </div>
-      <div class="service-info">
-        <div class="service-name">{{ service.name }}</div>
-        <div class="service-status-bar">
-          <span class="status-badge {{ service.status }}">{{ '正常' if service.status == 'normal' else '警告' if service.status == 'warning' else '异常' }}</span>
-          <span class="service-ping">{{ service.ping }}ms</span>
+    <div class="service-card service-{{ service.status }}">
+      <div class="service-main">
+        <div class="service-icon service-icon-{{ service.color }}">{{ service.icon }}</div>
+        <div class="service-body">
+          <div class="service-row">
+            <div class="service-name">{{ service.name }}</div>
+            <div class="service-latency">{{ service.ping_text }}</div>
+          </div>
+          <div class="service-target">{{ service.url }}</div>
+          <div class="service-meta">
+            <span class="service-badge badge-{{ service.status_color }}">{{ service.status_text }}</span>
+            <span class="service-code">{{ service.code_text }}</span>
+          </div>
+          <div class="service-message">{{ service.message }}</div>
         </div>
       </div>
     </div>
@@ -140,111 +74,21 @@
 </div>
 {% endmacro %}
 
-{# 系统信息卡片 #}
-{% macro system_info(d) %}
-<div class="info-card">
-  <div class="card-header">
-    <h3 class="card-title">系统信息</h3>
+{% macro details(d) %}
+<div class="panel-card details-panel">
+  <div class="section-head compact">
+    <div>
+      <div class="section-kicker">System Detail</div>
+      <h3 class="section-title">系统详情</h3>
+    </div>
   </div>
   <div class="info-grid">
+    {% for item in d.system_details %}
     <div class="info-item">
-      <span class="info-label">CPU 型号</span>
-      <span class="info-value">{{ d.cpu_brand }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">CPU 频率</span>
-      <span class="info-value">{{ d.cpu_freq | format_cpu_freq }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">系统版本</span>
-      <span class="info-value">{{ d.os_info }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">Python</span>
-      <span class="info-value">{{ d.python_version }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">启动时间</span>
-      <span class="info-value">{{ d.system_run_time }}</span>
-    </div>
-    <div class="info-item">
-      <span class="info-label">Bot 运行</span>
-      <span class="info-value">{{ d.bot_run_time }}</span>
-    </div>
-  </div>
-</div>
-{% endmacro %}
-
-{# 磁盘信息卡片 #}
-{% macro disk_info(d) %}
-<div class="info-card">
-  <div class="card-header">
-    <h3 class="card-title">磁盘使用情况</h3>
-  </div>
-  <div class="disk-list">
-    {% for it in d.disk_usage %}
-    <div class="disk-item">
-      <div class="disk-header">
-        <span class="disk-name">{{ it.name }}</span>
-        <span class="disk-percent">{{ it.percent | round(1) }}%</span>
-      </div>
-      <div class="disk-bar">
-        <div class="disk-progress {{ it.percent | percent_to_color }}" style="width: {{ it.percent }}%"></div>
-      </div>
-      <div class="disk-detail">{{ it.used | auto_convert_unit }} / {{ it.total | auto_convert_unit }}</div>
+      <div class="info-label">{{ item.label }}</div>
+      <div class="info-value">{{ item.value }}</div>
     </div>
     {% endfor %}
   </div>
-</div>
-{% endmacro %}
-
-{# 网络信息卡片 #}
-{% macro network_info(d) %}
-<div class="info-card">
-  <div class="card-header">
-    <h3 class="card-title">网络流量</h3>
-  </div>
-  <div class="network-list">
-    {% for it in d.network_io %}
-    <div class="network-item">
-      <div class="network-name">{{ it.name }}</div>
-      <div class="network-stats">
-        <span class="network-up">↑ {{ it.sent | auto_convert_unit(suffix='/s') }}</span>
-        <span class="network-down">↓ {{ it.recv | auto_convert_unit(suffix='/s') }}</span>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endmacro %}
-
-{# 进程列表卡片 #}
-{% macro process_list(d) %}
-<div class="info-card">
-  <div class="card-header">
-    <h3 class="card-title">进程 TOP</h3>
-  </div>
-  <div class="process-table">
-    <div class="process-header">
-      <span class="process-name">进程名称</span>
-      <span class="process-cpu">CPU</span>
-      <span class="process-mem">MEM</span>
-    </div>
-    {% for it in d.process_status %}
-    <div class="process-row">
-      <span class="process-name">{{ it.name }}</span>
-      <span class="process-cpu">{{ it.cpu | round(1) }}%</span>
-      <span class="process-mem">{{ it.mem | auto_convert_unit }}</span>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endmacro %}
-
-{# 底部信息 #}
-{% macro footer(d) %}
-<div class="footer">
-  <div class="footer-left">AstrBot {{ d.astrbot_version }}</div>
-  <div class="footer-right">Powered by Python {{ d.python_version.split()[0] }}</div>
 </div>
 {% endmacro %}
