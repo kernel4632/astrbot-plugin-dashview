@@ -1,0 +1,50 @@
+{% from 'macros.html.jinja' import header, resources_overview, services_monitor, system_info, disk_info, network_info, process_list, footer %}
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/default/res/css/index.css" />
+  {% for css in config.ps_default_additional_css -%}
+  <link rel="stylesheet" href="{{ css }}" />{% endfor %}
+</head>
+
+<body>
+  <div class="main-background">
+    <div class="main-background-mask">
+      <div class="main">
+        {% for name in config.ps_default_components %}
+        {% if name == "header" %}
+        {{ header(d) }}
+        {% elif name == "resources" %}
+        <div class="main-content">
+        {{ resources_overview(d) }}
+        {% elif name == "services" %}
+        {{ services_monitor(d) }}
+        </div>
+        {% elif name == "system" %}
+        {{ system_info(d) }}
+        {% elif name == "disk" %}
+        {{ disk_info(d) }}
+        {% elif name == "network" %}
+        {{ network_info(d) }}
+        {% elif name == "process" %}
+        {{ process_list(d) }}
+        {% elif name == "footer" %}
+        {{ footer(d) }}
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</body>
+
+<script src="/js/init-global.js"></script>
+<script src="/js/lazy-load.js"></script>
+{% for script in config.ps_default_additional_script -%}
+<script src="{{ script }}"></script>{% endfor %}
+<script src="/js/load-plugin.js"></script>
+
+</html>

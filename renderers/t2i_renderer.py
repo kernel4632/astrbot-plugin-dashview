@@ -1,0 +1,185 @@
+from __future__ import annotations
+
+import base64
+from pathlib import Path
+from typing import Any, Optional
+
+import jinja2
+from markupsafe import Markup
+
+
+ROOT = Path(__file__).parent.parent
+TPL_DIR = ROOT / "resources" / "templates"
+CSS_FILE = ROOT / "resources" / "css" / "index.css"
+
+
+def _read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def build_default_html(
+    collected: dict[str, Any],
+    bg_bytes: bytes,
+    bg_mime: str = "image/jpeg",
+    avatar_bytes: Optional[bytes] = None,
+) -> str:
+    """Compose a single-file HTML with inline CSS and macros, no external fetch.
+
+    - Inline macros.html.jinja at top of index template
+    - Remove external JS includes and lazy-load logic
+    - Replace background to inline data URL
+    - Inline CSS via <style>
+    """
+
+    macros = _read_text(TPL_DIR / "macros.html.jinja")
+    index = _read_text(TPL_DIR / "index.html.jinja")
+    css = _read_text(CSS_FILE)
+
+    # 1) strip import line in index (first line)
+    lines = index.splitlines()
+    if lines and lines[0].lstrip().startswith("{% from"):
+        lines = lines[1:]
+    index_no_import = "\n".join(lines)
+
+    # 2) tweak viewport to exact content width to avoid right-side whitespace on full_page screenshots
+    #    必须对去掉 import 之后的版本生效，后续处理都基于 index_no_import。
+    index_no_import = index_no_import.replace(
+        'content="width=device-width, initial-scale=1.0"',
+        'content="width=900, initial-scale=1.0"',
+    )
+
+    # remove external js includes
+    index_no_js = (
+        index_no_import.replace(
+            '<script src="/js/init-global.js"></script>',
+            "",
+        )
+        .replace(
+            '<script src="/js/lazy-load.js"></script>',
+            "",
+        )
+        .replace(
+            '<script src="/js/load-plugin.js"></script>',
+            "",
+        )
+    )
+
+    # 3) inline CSS style + fix page width to component width to avoid right-side white area
+    page_fix = "html,body{margin:0;padding:0;width:900px;}"
+    index_inlined_css = index_no_js.replace(
+        '<link rel="stylesheet" href="/default/res/css/index.css" />',
+        f"<style>\n{css}\n{page_fix}\n</style>",
+    )
+
+    # 4) inline background image via style instead of data-background-image
+    # 如果bg_bytes为空，使用CSS中定义的渐变背景
+    if bg_bytes:
+        b64 = base64.b64encode(bg_bytes).decode("ascii")
+        index_bg = index_inlined_css.replace(
+            '<div class="main-background">',
+            f'<div class="main-background" style="background-image:url(\'data:{bg_mime};base64,{b64}\')">',
+        )
+    else:
+        # 使用CSS中定义的SVG渐变背景
+        index_bg = index_inlined_css
+
+    # 5) inline avatar for header (replace lazy data-src with inline src)
+    try:
+        if avatar_bytes is None:
+            avatar_bytes = (ROOT / "res" / "assets" / "default_avatar.webp").read_bytes()
+        avatar_b64 = base64.b64encode(avatar_bytes).decode("ascii")
+
+        # 简单根据魔数检测图片类型，尽量匹配本地/远程头像真实格式
+        def _detect_image_mime(data: bytes) -> str:
+            if data.startswith(b"\x89PNG\r\n\x1a\n"):
+                return "image/png"
+            if data.startswith(b"\xff\xd8\xff"):
+                return "image/jpeg"
+            if data.startswith(b"RIFF") and b"WEBP" in data[:16]:
+                return "image/webp"
+            return "image/png"
+
+        avatar_mime = _detect_image_mime(avatar_bytes)
+        # 将 lazy 的 data-src 改为 src，保证 t2i 无需 JS 也能显示。
+        # header 模板定义在 macros.html.jinja 中，所以需要在 macros 字符串上替换。
+        macros = macros.replace(
+            'data-src="/api/bot_avatar/{{ info.self_id }}"',
+            f'src="data:{avatar_mime};base64,{avatar_b64}"',
+        )
+    except Exception:
+        # ignore if asset missing
+        pass
+
+    # 6) put macros at the beginning so calls like {{ header(d) }} work
+    tmpl = macros + "\n" + index_bg
+
+    # Render with our own jinja to resolve macros, using the same keys structure
+    env = jinja2.Environment(autoescape=jinja2.select_autoescape(["html", "xml"]))
+
+    def percent_to_color(percent: float) -> str:
+        if percent < 70:
+            return "prog-low"
+        if percent < 90:
+            return "prog-medium"
+        return "prog-high"
+
+    def auto_convert_unit(value: float, suffix: str = "", with_space: bool = False, unit_index: int | None = None) -> str:
+        units = ["B", "KB", "MB", "GB", "TB"]
+        idx = 0
+        v = float(value)
+        while (unit_index is None) and v >= 1024 and idx < len(units) - 1:
+            v /= 1024
+            idx += 1
+        if unit_index is not None:
+            idx = unit_index
+        sp = " " if with_space else ""
+        return f"{v:.0f}{sp}{units[idx]}{suffix}"
+
+    try:
+        from .utils import CpuFreq
+    except ImportError:
+        from utils import CpuFreq
+
+    def format_cpu_freq(freq: CpuFreq) -> str:
+        """将 psutil 返回的 MHz 频率友好地格式化为 MHz/GHz 文本。
+
+        psutil.cpu_freq() 通常返回 MHz，因此这里按 MHz 处理：
+        - < 1000MHz：显示为 `XXXMHz`
+        - >= 1000MHz：显示为 `X.XXGHz`
+        """
+
+        def fmt(x: float | None) -> str:
+            if not x:
+                return "未知"
+            # x 为 MHz
+            if x >= 1000:
+                return f"{x / 1000:.2f}GHz"
+            return f"{x:.0f}MHz"
+
+        cur = fmt(freq.current)
+        if freq.max not in (None, 0):
+            return f"{cur} / {fmt(freq.max)}"
+        return cur
+
+    def br_filter(value: Any) -> Markup:
+        """将字符串中的换行符替换为 <br />，并标记为安全 HTML。"""
+        if value is None:
+            return Markup("")
+        return Markup(str(value).replace("\n", "<br />"))
+
+    env.filters.update(
+        percent_to_color=percent_to_color,
+        auto_convert_unit=auto_convert_unit,
+        format_cpu_freq=format_cpu_freq,
+        br=br_filter,
+    )
+
+    template = env.from_string(tmpl)
+    # index expects variables: d (collected) and config.ps_default_components
+    config = {
+        "ps_default_components": ["header", "resources", "services"],
+        "ps_default_additional_css": [],
+        "ps_default_additional_script": [],
+    }
+    html = template.render(d=collected, config=config)
+    return html
