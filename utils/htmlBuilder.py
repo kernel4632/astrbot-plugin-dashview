@@ -104,10 +104,10 @@ class HtmlBuilder:
     templateFolder = root / "resources" / "templates"
 
     # 默认 CSS 文件放在这里。
-    cssFile = root / "resources" / "css" / "index.css"
+    cssFile = root / "resources" / "index.css"
 
     # 默认头像文件放在这里。如果调用时没有传头像，就尝试使用它。
-    defaultAvatarFile = root / "resources" / "assets" / "default_avatar.webp"
+    defaultAvatarFile = root / "resources" / "avatar.jpg"
 
     # 这个宽度不是随便写的。原始代码已经明确说明：
     # 固定为 900 可以避免 full_page 截图时右侧出现白边。

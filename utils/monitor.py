@@ -94,6 +94,7 @@ class _Monitor:
         {"name": "本地 Redis", "type": "tcp", "host": "127.0.0.1", "port": 6379}
     ]
     """
+
     def collect(self, services: Optional[List[Dict[str, Any]]] = None, timeout: Optional[int] = None) -> Dict[str, Any]:
         print("开始执行一次状态检测")
 
@@ -122,11 +123,11 @@ class _Monitor:
         print(f"状态检测完成，服务总数 {summary['serviceCount']}，失败 {summary['serviceFailCount']}")
         return result
 
-
     """
     这个函数专门收集电脑或服务器自己的状态。
     返回的是一个大字典，字段名尽量直接表达含义，便于外部直接取值。
     """
+
     def _collectComputer(self) -> Dict[str, Any]:
         print("开始收集电脑状态")
 
@@ -158,12 +159,12 @@ class _Monitor:
         print("电脑状态收集完成")
         return result
 
-
     """
     这个函数负责依次检测所有服务。
     这里不用复杂并发，是为了保持脚本简单、稳定、容易看懂。
     对于“一次性巡检”场景，这种顺序检测通常已经够用。
     """
+
     def _collectServices(self, services: List[Dict[str, Any]], timeout: int) -> List[Dict[str, Any]]:
         print("开始检测指定服务")
 
@@ -182,12 +183,12 @@ class _Monitor:
         print(f"服务检测完成，共检测 {len(results)} 个服务")
         return results
 
-
     """
     这个函数根据服务 type 分发到不同检测逻辑。
     这样做的好处是入口统一，扩展也方便。
     以后你要加 ping、dns、数据库连接检测，也是在这里继续分发。
     """
+
     def _checkService(self, service: Dict[str, Any], timeout: int) -> Dict[str, Any]:
         print(f"开始检测服务：{service.get('name', '未命名服务')}")
 
@@ -206,11 +207,11 @@ class _Monitor:
 
         return self._buildServiceError(service, f"不支持的服务类型: {serviceType}")
 
-
     """
     这个函数检测网站或 HTTP 接口。
     它会尝试发起一次请求，并记录返回码、耗时、是否成功。
     """
+
     def _checkHttp(self, service: Dict[str, Any], timeout: int) -> Dict[str, Any]:
         # URL 是 HTTP 检测的核心字段，没有它就没法继续。
         if "url" not in service:
@@ -243,22 +244,25 @@ class _Monitor:
                 return result
 
         # HTTPError 代表服务器有响应，但返回的是 4xx 或 5xx。
-        # 这种情况比“完全连不上”多一点信息，所以单独处理。
+        # 对监控页面来说，“有明确响应”与“完全连不上”不是一回事。
+        # 像很多站点会返回 403 来拦截默认探测请求，但这并不代表站点挂了。
         except urllib.error.HTTPError as error:
             endTime = time.time()
             durationMs = round((endTime - startTime) * 1000, 2)
+            statusCode = int(error.code)
+            isReachable = statusCode in [401, 403, 405]
 
             result = {
                 "name": name,
                 "type": "http",
                 "target": url,
-                "ok": False,
-                "statusCode": int(error.code),
+                "ok": isReachable,
+                "statusCode": statusCode,
                 "durationMs": durationMs,
-                "message": f"HTTP 错误: {error.reason}",
+                "message": "服务可达，但拒绝了当前探测请求" if isReachable else f"HTTP 错误: {error.reason}",
             }
 
-            print(f"服务检测完成：{name}，结果失败")
+            print(f"服务检测完成：{name}，结果 {'成功' if isReachable else '失败'}")
             return result
 
         # 这里捕获更广的异常，是因为网络检查容易受 DNS、超时、证书、断网等多种因素影响。
@@ -279,11 +283,11 @@ class _Monitor:
             print(f"服务检测完成：{name}，结果失败")
             return result
 
-
     """
     这个函数检测 TCP 端口能否连接。
     它适合检查 Redis、MySQL、PostgreSQL、MQ、任意 TCP 服务是否“端口还活着”。
     """
+
     def _checkTcp(self, service: Dict[str, Any], timeout: int) -> Dict[str, Any]:
         # TCP 检测至少需要 host 和 port，缺任何一个都不能判断连通性。
         if "host" not in service:
@@ -332,11 +336,11 @@ class _Monitor:
             print(f"服务检测完成：{name}，结果失败")
             return result
 
-
     """
     这个函数统一生成“服务配置本身有问题”的失败结果。
     这样外部看到的返回结构始终一致，不需要因为错误场景写很多额外判断。
     """
+
     def _buildServiceError(self, service: Dict[str, Any], message: str) -> Dict[str, Any]:
         name = str(service.get("name", "未命名服务"))
         serviceType = str(service.get("type", "unknown"))
@@ -351,11 +355,11 @@ class _Monitor:
             "message": message,
         }
 
-
     """
     这个函数负责生成汇总信息。
     汇总的价值是让调用者不用自己再写一遍统计逻辑，拿来就能做展示和告警。
     """
+
     def _buildSummary(self, services: List[Dict[str, Any]]) -> Dict[str, Any]:
         serviceCount = len(services)
         serviceOkCount = sum(1 for item in services if item.get("ok") is True)
@@ -367,11 +371,11 @@ class _Monitor:
             "serviceFailCount": serviceFailCount,
         }
 
-
     """
     这个函数拿 CPU 信息。
     如果有 psutil，就返回更完整的数据；没有时也尽量给出基础信息。
     """
+
     def _getCpuInfo(self) -> Dict[str, Any]:
         logicalCount = os.cpu_count()
 
@@ -402,12 +406,12 @@ class _Monitor:
             "loadAverage": loadAverage,
         }
 
-
     """
     这个函数拿内存信息。
     标准库没有特别统一的跨平台“内存使用率”接口，所以优先用 psutil。
     如果没有 psutil，就返回空值而不是假装返回不准确的数据。
     """
+
     def _getMemoryInfo(self) -> Dict[str, Any]:
         if not psutil:
             return {
@@ -437,12 +441,12 @@ class _Monitor:
                 "note": str(error),
             }
 
-
     """
     这个函数拿当前系统盘的磁盘信息。
     为了兼容性和简单性，这里默认取当前 Python 运行所在盘。
     在 Linux 下一般会是 /，在 Windows 下一般会是当前盘符。
     """
+
     def _getDiskInfo(self) -> Dict[str, Any]:
         path = os.path.abspath(os.sep)
 
@@ -467,12 +471,12 @@ class _Monitor:
                 "note": str(error),
             }
 
-
     """
     这个函数获取本机常用出口 IP。
     这里没有真正发网络数据，只是借助 UDP 套接字让系统帮我们选出常用出口地址。
     这种写法比只查 hostname 更常能拿到实际局域网 IP。
     """
+
     def _getLocalIp(self) -> Optional[str]:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -484,11 +488,11 @@ class _Monitor:
             except Exception:
                 return None
 
-
     """
     这个函数获取开机时间文本。
     如果拿不到，就返回 None，让调用方知道这里确实没有数据。
     """
+
     def _getBootTimeText(self) -> Optional[str]:
         if not psutil:
             return None
@@ -499,8 +503,8 @@ class _Monitor:
         except Exception:
             return None
 
-
     """这个函数统一生成当前时间文本，方便日志展示和结果保存。"""
+
     def _getNowText(self) -> str:
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

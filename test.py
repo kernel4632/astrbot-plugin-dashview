@@ -138,8 +138,8 @@ async def main():
     services = result["services"]
     summary = result["summary"]
 
-    resources_dir = os.path.join(os.path.dirname(__file__), "resources", "assets")
-    avatar_path = os.path.join(resources_dir, "avatar.webp")
+    resources_dir = os.path.join(os.path.dirname(__file__), "resources")
+    avatar_path = os.path.join(resources_dir, "avatar.jpg")
 
     avatar_bytes = None
 

@@ -1,4 +1,4 @@
-{% from 'macros.html.jinja' import header, overview, services_monitor, details %}
+{% from 'macros.html.jinja' import header, overview, services_monitor %}
 
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -18,7 +18,6 @@
         {{ header(d) }}
         {{ overview(d) }}
         {{ services_monitor(d) }}
-        {{ details(d) }}
       </div>
     </div>
   </div>
