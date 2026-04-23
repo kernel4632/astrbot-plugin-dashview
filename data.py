@@ -35,16 +35,16 @@ class Data:
     """
 
     @classmethod
-    def buildCollected(cls, computer: dict[str, Any], services: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, Any]:
+    def buildCollected(cls, computer: dict[str, Any], services: list[dict[str, Any]], summary: dict[str, Any], nickname: str = "阿柯AKer", success_text: str = "阿柯牛逼", fail_text: str = "阿柯死了") -> dict[str, Any]:
         """这个函数把页面需要的所有数据一次性整理好，返回给模板或插件入口直接使用。"""
         return {
-            "hostname": computer.get("hostName", "主服务器"),
+            "hostname": nickname,
             "os_info": f"{computer.get('system', 'Unknown')} ({computer.get('machine', '')})",
             "summary": summary,
             "overview": cls.buildOverview(summary),
             "resource_cards": cls.buildResourceCards(computer),
             "services_status": cls.buildServices(services),
-            "system_details": cls.buildSystemDetails(computer, summary),
+            "system_details": cls.buildSystemDetails(computer, summary, success_text, fail_text),
         }
 
     @classmethod
@@ -135,10 +135,10 @@ class Data:
         return cards
 
     @classmethod
-    def buildSystemDetails(cls, computer: dict[str, Any], summary: dict[str, Any]) -> dict[str, Any]:
+    def buildSystemDetails(cls, computer: dict[str, Any], summary: dict[str, Any], success_text: str = "阿柯牛逼", fail_text: str = "阿柯死了") -> dict[str, Any]:
         """这个函数生成右侧摘要区的数据：上面两个信息块，下面一个总状态结论块。"""
         isAllOk = summary.get("serviceFailCount", 0) == 0
-        statusText = "阿柯牛逼" if isAllOk else "阿柯死了"
+        statusText = success_text if isAllOk else fail_text
 
         return {
             "cards": [

@@ -1,10 +1,25 @@
 {
+  "nickname": {
+    "description": "头像旁边显示的名称",
+    "type": "string",
+    "hint": "会显示在监控面板左上角头像旁边",
+    "default": "阿柯AKer"
+  },
   "services": {
     "description": "监控服务列表",
     "type": "list",
     "hint": "配置需要监控的服务，支持 HTTP 和 TCP 类型",
     "default": [
-      {"name": "示例服务", "type": "http", "url": "https://example.com"}
+      {
+        "name": "超级主核API",
+        "type": "http",
+        "url": "https://api.hujiarong.site/"
+      },
+      {
+        "name": "主核Kernyr网站",
+        "type": "http",
+        "url": "https://www.hujiarong.site/"
+      }
     ],
     "items": {
       "name": {
@@ -15,7 +30,10 @@
       "type": {
         "description": "服务类型",
         "type": "string",
-        "options": ["http", "tcp"],
+        "options": [
+          "http",
+          "tcp"
+        ],
         "hint": "HTTP 或 TCP 服务"
       },
       "url": {
@@ -35,11 +53,27 @@
       }
     }
   },
+  "success_text": {
+    "description": "全部服务正常时显示的文字",
+    "type": "string",
+    "hint": "显示在监控面板右下角的状态结论区",
+    "default": "阿柯牛逼"
+  },
+  "fail_text": {
+    "description": "有服务异常时显示的文字",
+    "type": "string",
+    "hint": "显示在监控面板右下角的状态结论区",
+    "default": "阿柯死了"
+  },
   "timeout": {
-    "description": "超时时间",
+    "description": "服务检测超时时间",
     "type": "int",
-    "hint": "服务检测的超时时间，单位秒",
+    "hint": "单位：秒",
     "default": 5,
-    "slider": {"min": 1, "max": 30, "step": 1}
+    "slider": {
+      "min": 1,
+      "max": 30,
+      "step": 1
+    }
   }
 }

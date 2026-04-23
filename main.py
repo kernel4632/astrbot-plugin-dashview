@@ -89,7 +89,12 @@ class DashViewPlugin(Star):
             avatarConfig = avatarConfig if isinstance(avatarConfig, dict) else {}
 
             logger.info("开始采集系统状态信息")
-            result = Monitor.collect(services=self.buildServices(), timeout=5)
+            servicesToCheck = config.get("services") if isinstance(config, dict) else []
+            servicesToCheck = servicesToCheck if isinstance(servicesToCheck, list) else self.buildServices()
+            timeout = config.get("timeout") if isinstance(config, dict) else 5
+            timeout = int(timeout) if isinstance(timeout, (int, float)) else 5
+
+            result = Monitor.collect(services=servicesToCheck, timeout=timeout)
             computer = result["computer"]
             services = result["services"]
             summary = result["summary"]
@@ -97,7 +102,21 @@ class DashViewPlugin(Star):
             logger.info("开始解析头像配置")
             avatarBytes = await self.resolveAvatar(event, avatarConfig, config)
 
-            collected = Data.buildCollected(computer=computer, services=services, summary=summary)
+            nickname = config.get("nickname") if isinstance(config, dict) else ""
+            nickname = str(nickname) if nickname else "阿柯AKer"
+            successText = config.get("success_text") if isinstance(config, dict) else ""
+            successText = str(successText) if successText else "阿柯牛逼"
+            failText = config.get("fail_text") if isinstance(config, dict) else ""
+            failText = str(failText) if failText else "阿柯死了"
+
+            collected = Data.buildCollected(
+                computer=computer, 
+                services=services, 
+                summary=summary,
+                nickname=nickname,
+                success_text=successText,
+                fail_text=failText
+            )
 
             logger.info("开始生成单文件 HTML")
             html = Render.build(collected=collected, avatarBytes=avatarBytes)
