@@ -55,26 +55,8 @@ class DashViewPlugin(Star):
         self.config = config if config is not None else {}
 
     async def initialize(self):
-        """这个函数在插件加载时运行，用来把配置修正成可安全读取的结构。"""
+        """这个函数在插件加载时运行，当前只保留日志，避免把不该暴露的字段写进 WebUI 配置。"""
         logger.info("开始初始化 DashView 插件")
-        config = getattr(self, "config", None)
-
-        if not (hasattr(config, "get") and hasattr(config, "__setitem__")):
-            logger.info("DashView 插件初始化完成")
-            return
-
-        if not isinstance(config.get("avatar"), dict):
-            config["avatar"] = {}  # 头像配置统一变成 dict，后面读取时就不用反复判空。
-
-        if not isinstance(config.get("use_t2i"), bool):
-            config["use_t2i"] = True  # 保留原有开关字段，避免老配置升级时缺字段。
-
-        if hasattr(config, "save_config"):
-            try:
-                config.save_config()  # 有保存能力时立刻落盘，这样下次启动就不会重复修正。
-            except Exception as error:
-                logger.warning(f"DashView: 保存配置失败: {error}")
-
         logger.info("DashView 插件初始化完成")
 
     @filter.command("运行状态", alias=ALIASES)
@@ -85,8 +67,6 @@ class DashViewPlugin(Star):
 
         try:
             config = getattr(self, "config", None) or {}
-            avatarConfig = config.get("avatar") if isinstance(config, dict) else {}
-            avatarConfig = avatarConfig if isinstance(avatarConfig, dict) else {}
 
             logger.info("开始采集系统状态信息")
             servicesToCheck = config.get("services") if isinstance(config, dict) else []
@@ -100,7 +80,7 @@ class DashViewPlugin(Star):
             summary = result["summary"]
 
             logger.info("开始解析头像配置")
-            avatarBytes = await self.resolveAvatar(event, avatarConfig, config)
+            avatarBytes = await self.resolveAvatar(event, config)
 
             nickname = config.get("nickname") if isinstance(config, dict) else ""
             nickname = str(nickname) if nickname else "阿柯AKer"
@@ -153,16 +133,16 @@ class DashViewPlugin(Star):
             {"name": "主核Kernyr网站", "type": "http", "url": "https://www.hujiarong.site/"},
         ]
 
-    async def resolveAvatar(self, event: AstrMessageEvent, avatarConfig: dict, config: dict) -> bytes | None:
+    async def resolveAvatar(self, event: AstrMessageEvent, config: dict) -> bytes | None:
         """这个函数按“本地路径 → 配置 URL → QQ 头像”的顺序解析最终头像。"""
-        avatarLocalPath = avatarConfig.get("avatar_local_path") or config.get("avatar_local_path")
+        avatarLocalPath = config.get("avatar_local_path")
         if isinstance(avatarLocalPath, str) and avatarLocalPath.strip():
             try:
                 return Path(avatarLocalPath.strip()).read_bytes()  # 本地路径最快也最稳定，所以优先读它。
             except Exception as error:
                 logger.warning(f"DashView: 读取本地头像失败 {avatarLocalPath}: {error}")
 
-        avatarUrl = avatarConfig.get("avatar_url") or config.get("avatar_url")
+        avatarUrl = config.get("avatar_url")
         if isinstance(avatarUrl, str) and avatarUrl.strip():
             return await self.downloadBytes(avatarUrl.strip(), "配置头像")
 

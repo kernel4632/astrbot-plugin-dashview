@@ -1,22 +1,9 @@
 # yaml-language-server: $schema=https://json-schema.org/draft-07/schema#
 name: astrbot_plugin_dashview
 display_name: DashView
-version: 1.0.0
+version: 1.0.1
 description: 运行状态仪表盘插件，实时采集系统状态并生成精美监控报告。
 author: Kernyr
 support_platforms:
-  - telegram
-  - discord
-  - qq_official
   - aiocqhttp
-  - wecom
-  - lark
-  - dingtalk
-  - slack
-  - kook
-  - vocechat
-  - weixin_official_account
-  - satori
-  - misskey
-  - line
 astrbot_version: ">=4.16"
