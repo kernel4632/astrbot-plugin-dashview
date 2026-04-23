@@ -27,6 +27,13 @@ class Service:
     """这个对象专门负责服务检测。"""
 
     defaultHttpMethod = "GET"
+    defaultHeaders = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
 
     @classmethod
     def collect(cls, services: list[dict[str, Any]], timeout: int) -> list[dict[str, Any]]:
@@ -72,9 +79,10 @@ class Service:
         name = str(service.get("name", url))
         method = str(service.get("method", cls.defaultHttpMethod)).upper()
         startTime = time.time()
+        headers = cls.buildHeaders(service)
 
         try:
-            request = urllib.request.Request(url=url, method=method)
+            request = urllib.request.Request(url=url, method=method, headers=headers)
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 endTime = time.time()
                 statusCode = getattr(response, "status", None) or response.getcode()
@@ -103,7 +111,7 @@ class Service:
                 "ok": isReachable,
                 "statusCode": statusCode,
                 "durationMs": durationMs,
-                "message": "服务可达，但拒绝了当前探测请求" if isReachable else f"HTTP 错误: {error.reason}",
+                "message": cls.buildHttpErrorMessage(statusCode, isReachable),
             }
             print(f"服务检测完成：{name}，结果 {'成功' if isReachable else '失败'}")
             return result
@@ -121,6 +129,35 @@ class Service:
             }
             print(f"服务检测完成：{name}，结果失败")
             return result
+
+    @classmethod
+    def buildHeaders(cls, service: dict[str, Any]) -> dict[str, str]:
+        """这个函数统一生成更像浏览器的请求头，减少站点把探测请求误判成异常流量。"""
+        headers = dict(cls.defaultHeaders)
+        customHeaders = service.get("headers")
+
+        if isinstance(customHeaders, dict):
+            for key, value in customHeaders.items():
+                headers[str(key)] = str(value)
+
+        return headers
+
+    @classmethod
+    def buildHttpErrorMessage(cls, statusCode: int, isReachable: bool) -> str:
+        """这个函数把常见 HTTP 探测结果翻译成人更容易理解的文案。"""
+        if not isReachable:
+            return f"HTTP 状态码异常: {statusCode}"
+
+        if statusCode == 401:
+            return "服务在线，但这个地址需要身份验证"
+
+        if statusCode == 403:
+            return "服务在线，但服务器拒绝了当前请求"
+
+        if statusCode == 405:
+            return "服务在线，但当前请求方法不被允许"
+
+        return f"服务在线，但返回了状态码 {statusCode}"
 
     @classmethod
     def checkTcp(cls, service: dict[str, Any], timeout: int) -> dict[str, Any]:
