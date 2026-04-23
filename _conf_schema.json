@@ -1,0 +1,45 @@
+{
+  "services": {
+    "description": "监控服务列表",
+    "type": "list",
+    "hint": "配置需要监控的服务，支持 HTTP 和 TCP 类型",
+    "default": [
+      {"name": "示例服务", "type": "http", "url": "https://example.com"}
+    ],
+    "items": {
+      "name": {
+        "description": "服务名称",
+        "type": "string",
+        "hint": "显示在监控面板上的服务名称"
+      },
+      "type": {
+        "description": "服务类型",
+        "type": "string",
+        "options": ["http", "tcp"],
+        "hint": "HTTP 或 TCP 服务"
+      },
+      "url": {
+        "description": "HTTP 服务地址",
+        "type": "string",
+        "hint": "仅 HTTP 类型需要填写"
+      },
+      "host": {
+        "description": "TCP 服务主机",
+        "type": "string",
+        "hint": "仅 TCP 类型需要填写"
+      },
+      "port": {
+        "description": "TCP 服务端口",
+        "type": "int",
+        "hint": "仅 TCP 类型需要填写"
+      }
+    }
+  },
+  "timeout": {
+    "description": "超时时间",
+    "type": "int",
+    "hint": "服务检测的超时时间，单位秒",
+    "default": 5,
+    "slider": {"min": 1, "max": 30, "step": 1}
+  }
+}

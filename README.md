@@ -30,6 +30,14 @@ python test.py
 
 ## 服务配置
 
+### 方式一：WebUI 配置（推荐）
+
+在 AstrBot 管理面板的插件配置页，可以直接配置：
+- 监控服务列表（支持 HTTP/TCP）
+- 超时时间
+
+### 方式二：代码配置
+
 在 `main.py` 中配置监控目标：
 
 ```python
@@ -42,17 +50,18 @@ python test.py
 ## 项目结构
 
 ```
-├── main.py           # 插件入口
-├── data.py           # 页面数据翻译层
-├── test.py           # 本地测试入口
-├── demo.jpg          # 效果预览图
-├── metadata.yaml     # 插件元数据
+├── main.py              # 插件入口
+├── data.py              # 页面数据翻译层
+├── test.py              # 本地测试入口
+├── demo.jpg             # 效果预览图
+├── metadata.yaml        # 插件元数据
+├── _conf_schema.json    # WebUI 配置项定义
 ├── utils/
-│   ├── monitor.py    # 监控总入口
-│   ├── computer.py   # 电脑状态采集
-│   ├── service.py    # 服务检测
-│   └── render.py     # HTML 打包
-└── resources/        # 模板和样式
+│   ├── monitor.py       # 监控总入口
+│   ├── computer.py      # 电脑状态采集
+│   ├── service.py       # 服务检测
+│   └── render.py        # HTML 打包
+└── resources/           # 模板和样式
 ```
 
 ## 许可证
