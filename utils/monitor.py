@@ -4,7 +4,7 @@
 它本身不再塞满所有细节，而是把监控拆成了三块：
 1. Computer 负责收集电脑自己的状态
 2. Service 负责检测你指定的服务
-3. Summary 负责把服务结果统计成摘要
+3. Monitor 负责把服务结果统计成总结果
 
 这样做之后，外部仍然只需要记住一个入口：
 Monitor.collect()
@@ -23,7 +23,6 @@ from typing import Any, Optional
 
 from .computer import Computer
 from .service import Service
-from .summary import Summary
 
 
 class _Monitor:
@@ -44,7 +43,7 @@ class _Monitor:
         checkedAt = self.getNowText()
         computer = Computer.collect()
         serviceResults = Service.collect(services=services, timeout=timeout)
-        summary = Summary.build(serviceResults)
+        summary = self.build(serviceResults)
         isAllOk = summary["serviceFailCount"] == 0
 
         result = {
@@ -61,6 +60,17 @@ class _Monitor:
     def getNowText(self) -> str:
         """这个函数统一生成当前时间文本，方便日志和结果记录保持一致。"""
         return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    def build(self, services: list[dict[str, Any]]) -> dict[str, Any]:
+        """这个函数把服务结果列表统计成总数、成功数和失败数。"""
+        serviceCount = len(services)
+        serviceOkCount = sum(1 for item in services if item.get("ok") is True)
+        serviceFailCount = serviceCount - serviceOkCount
+        return {
+            "serviceCount": serviceCount,
+            "serviceOkCount": serviceOkCount,
+            "serviceFailCount": serviceFailCount,
+        }
 
 
 Monitor = _Monitor()
