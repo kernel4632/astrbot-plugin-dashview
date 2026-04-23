@@ -217,3 +217,9 @@ Data.buildCollected(...)  # 转换数据格式
 | 本地测试     | `test.py`                               |
 
 这就是 DashView 现在最重要的阅读地图。
+
+## 许可证
+
+本项目采用 **GNU Affero General Public License v3.0** 许可证。
+
+详细信息请查看 [LICENSE](LICENSE) 文件。
