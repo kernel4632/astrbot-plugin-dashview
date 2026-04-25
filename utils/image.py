@@ -58,7 +58,7 @@ class Image:
         async with async_playwright() as playwright:
             browser = await playwright.chromium.launch(headless=True, args=cls.browserArgs)
             try:
-                page = await browser.new_page(viewport={"width": finalWidth, "height": cls.minHeight, "device_scale_factor": cls.scale})
+                page = await browser.new_page(viewport={"width": finalWidth, "height": cls.minHeight}, device_scale_factor=cls.scale)
                 await page.set_content(html, wait_until="networkidle")
                 await page.wait_for_timeout(cls.waitMilliseconds)
                 height = await cls.measureHeight(page)
