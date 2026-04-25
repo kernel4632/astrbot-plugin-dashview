@@ -4,7 +4,7 @@
 它只负责三件事：
 1. 接收“运行状态”命令
 2. 调用其他文件收集数据、整理页面数据、生成 HTML
-3. 把 HTML 交给本地渲染器截图后发回去
+3. 把 HTML 交给本地渲染器截图，保存成本地图片后发回去
 
 如果你想看“页面要显示哪些内容”，去看 data.py。
 如果你想看“怎么检测系统和服务”，去看 utils/monitor.py。
@@ -12,12 +12,13 @@
 如果你想看“怎么把 HTML 渲染成图片”，去看 utils/image.py。
 
 最常见的调用流程是这样的：
-用户发送“运行状态” → 这里收到命令 → Monitor.collect() 拿到真实数据 → Data.buildCollected() 整理成模板需要的结构 → Render.build() 生成单文件 HTML → Image.build() 本地截图返回。
+用户发送“运行状态” → 这里收到命令 → Monitor.collect() 拿到真实数据 → Data.buildCollected() 整理成模板需要的结构 → Render.build() 生成单文件 HTML → Image.build() 本地截图 → saveImage() 保存图片路径 → event.image_result() 返回。
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from time import time_ns
 from typing import Final
 
 import httpx
@@ -33,6 +34,8 @@ from .utils.render import Render
 
 PLUGIN_NAME: Final[str] = "astrbot_plugin_dashview"
 ALIASES: Final[set[str]] = {"状态", "zt", "yxzt", "status", "运行状态"}
+ROOT: Final[Path] = Path(__file__).parent
+CACHE_FOLDER: Final[Path] = ROOT / "cache"
 
 
 @register(
@@ -65,7 +68,7 @@ class DashViewPlugin(Star):
     async def cmd_status(self, event: AstrMessageEvent):
         """这个函数接收命令，然后完整执行一次“采集 → 整理 → 渲染 → 返回”。"""
         logger.info("收到运行状态查询命令")
-        imageToSend: str | bytes | None = None
+        imageToSend: str | None = None
 
         try:
             config = getattr(self, "config", None) or {}
@@ -104,7 +107,8 @@ class DashViewPlugin(Star):
             html = Render.build(collected=collected, avatarBytes=avatarBytes)
 
             logger.info("开始使用本地 HTML 渲染器生成图片")
-            imageToSend = await Image.build(html, width=900, quality=90)
+            imageBytes = await Image.build(html, width=900, quality=90)
+            imageToSend = self.saveImage(imageBytes)
         except Exception:
             logger.exception("生成运行状态图片失败")
             yield event.plain_result("获取运行状态图片失败，请检查后台输出")
@@ -117,6 +121,13 @@ class DashViewPlugin(Star):
 
         yield event.image_result(imageToSend)
         logger.info("运行状态图片已成功发送")
+
+    def saveImage(self, imageBytes: bytes) -> str:
+        """这个函数把渲染出的图片字节保存成本地文件，因为 AstrBot v4.23.5 的 image_result() 需要 URL 或路径字符串。"""
+        CACHE_FOLDER.mkdir(parents=True, exist_ok=True)
+        imagePath = CACHE_FOLDER / f"dashview_{time_ns()}.jpg"
+        imagePath.write_bytes(imageBytes)
+        return str(imagePath)
 
     def buildServices(self) -> list[dict]:
         """这个函数统一放要检测的服务列表，后面改目标网站时只需要改这里。"""
