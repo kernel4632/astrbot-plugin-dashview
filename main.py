@@ -39,7 +39,7 @@ ALIASES: Final[set[str]] = {"状态", "zt", "yxzt", "status", "运行状态"}
     PLUGIN_NAME,
     "Kernyr",
     "以图片形式显示当前设备的运行状态仪表盘",
-    "1.0.0",
+    "1.0.3",
 )
 class DashViewPlugin(Star):
     """
