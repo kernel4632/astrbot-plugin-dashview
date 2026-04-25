@@ -5,7 +5,7 @@
 1. 调用 Monitor.collect() 采集真实数据
 2. 调用 Data.buildCollected() 整理模板数据
 3. 调用 Render.build() 生成单文件 HTML
-4. 把 HTML 写到 output_test.html，方便你本地直接打开查看效果
+4. 把 HTML 原样交给 Image.save() 渲染成 output_test.jpg，确认插件实际发图效果
 
 如果你改了模板、CSS、文案、卡片结构，最方便的验证方式就是运行这个文件。
 最常见的用法只有一个：
@@ -18,13 +18,15 @@ import asyncio
 from pathlib import Path
 
 from data import Data
+from utils.image import Image
 from utils.monitor import Monitor
 from utils.render import Render
 
 
 ROOT = Path(__file__).parent
 RESOURCES = ROOT / "resources"
-OUTPUT = ROOT / "output_test.html"
+OUTPUT_HTML = ROOT / "output_test.html"
+OUTPUT_IMAGE = ROOT / "output_test.jpg"
 AVATAR = RESOURCES / "avatar.jpg"
 SERVICES = [
     {"name": "超级主核API", "type": "http", "url": "https://api.hujiarong.site/"},
@@ -59,7 +61,7 @@ def printResult(computer: dict, services: list[dict], summary: dict):
 
 
 async def main():
-    """这个函数完整执行一次本地测试流程，并生成 output_test.html。"""
+    """这个函数完整执行一次本地测试流程，并同时生成 HTML 和由 HTML 渲染出来的图片。"""
     print("正在采集真实系统信息...")
     result = Monitor.collect(services=SERVICES, timeout=5)
     computer = result["computer"]
@@ -68,8 +70,10 @@ async def main():
     avatarBytes = readAvatar()
     collected = Data.buildCollected(computer=computer, services=services, summary=summary)
     html = Render.build(collected=collected, avatarBytes=avatarBytes)
-    OUTPUT.write_text(html, encoding="utf-8")
-    print(f"\nHTML文件已生成: {OUTPUT}")
+    OUTPUT_HTML.write_text(html, encoding="utf-8")
+    await Image.save(html=html, outputPath=OUTPUT_IMAGE, width=900, quality=90)
+    print(f"\nHTML文件已生成: {OUTPUT_HTML}")
+    print(f"HTML渲染图片已生成: {OUTPUT_IMAGE}")
     printResult(computer=computer, services=services, summary=summary)
 
 

@@ -4,14 +4,15 @@
 它只负责三件事：
 1. 接收“运行状态”命令
 2. 调用其他文件收集数据、整理页面数据、生成 HTML
-3. 把 HTML 交给 AstrBot 渲染成图片再发回去
+3. 把 HTML 交给本地渲染器截图后发回去
 
 如果你想看“页面要显示哪些内容”，去看 data.py。
 如果你想看“怎么检测系统和服务”，去看 utils/monitor.py。
 如果你想看“怎么把模板打包成单文件 HTML”，去看 utils/render.py。
+如果你想看“怎么把 HTML 渲染成图片”，去看 utils/image.py。
 
 最常见的调用流程是这样的：
-用户发送“运行状态” → 这里收到命令 → Monitor.collect() 拿到真实数据 → Data.buildCollected() 整理成模板需要的结构 → Render.build() 生成单文件 HTML → html_render() 渲染图片返回。
+用户发送“运行状态” → 这里收到命令 → Monitor.collect() 拿到真实数据 → Data.buildCollected() 整理成模板需要的结构 → Render.build() 生成单文件 HTML → Image.build() 本地截图返回。
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
 
 from .data import Data
+from .utils.image import Image
 from .utils.monitor import Monitor
 from .utils.render import Render
 
@@ -90,29 +92,19 @@ class DashViewPlugin(Star):
             failText = str(failText) if failText else "阿柯死了"
 
             collected = Data.buildCollected(
-                computer=computer, 
-                services=services, 
+                computer=computer,
+                services=services,
                 summary=summary,
                 nickname=nickname,
                 success_text=successText,
-                fail_text=failText
+                fail_text=failText,
             )
 
             logger.info("开始生成单文件 HTML")
             html = Render.build(collected=collected, avatarBytes=avatarBytes)
 
-            logger.info("开始调用 AstrBot 渲染器")
-            imageToSend = await self.html_render(
-                html,
-                {},
-                return_url=True,
-                options={
-                    "type": "jpeg",
-                    "quality": 90,
-                    "full_page": True,
-                    "device_scale_factor_level": "ultra",
-                },
-            )
+            logger.info("开始使用本地 HTML 渲染器生成图片")
+            imageToSend = await Image.build(html, width=900, quality=90)
         except Exception:
             logger.exception("生成运行状态图片失败")
             yield event.plain_result("获取运行状态图片失败，请检查后台输出")
