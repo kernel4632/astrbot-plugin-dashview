@@ -42,7 +42,7 @@ CACHE_FOLDER: Final[Path] = ROOT / "cache"
     PLUGIN_NAME,
     "Kernyr",
     "以图片形式显示当前设备的运行状态仪表盘",
-    "1.0.3",
+    "1.0.4",
 )
 class DashViewPlugin(Star):
     """

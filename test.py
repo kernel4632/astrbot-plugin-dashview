@@ -71,7 +71,7 @@ async def main():
     collected = Data.buildCollected(computer=computer, services=services, summary=summary)
     html = Render.build(collected=collected, avatarBytes=avatarBytes)
     OUTPUT_HTML.write_text(html, encoding="utf-8")
-    await Image.save(html=html, outputPath=OUTPUT_IMAGE, width=900, quality=90)
+    await Image.save(html=html, outputPath=OUTPUT_IMAGE, width=900, quality=95)
     print(f"\nHTML文件已生成: {OUTPUT_HTML}")
     print(f"HTML渲染图片已生成: {OUTPUT_IMAGE}")
     printResult(computer=computer, services=services, summary=summary)
