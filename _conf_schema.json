@@ -76,6 +76,45 @@
       "step": 1
     }
   },
+  "model_probe_interval_hours": {
+    "description": "模型定时探测间隔",
+    "type": "float",
+    "hint": "单位：小时。0 表示关闭后台定时探测；例如 1 表示每小时探测一次，只记录历史，不主动推送图片。",
+    "default": 0,
+    "slider": {
+      "min": 0,
+      "max": 72,
+      "step": 0.5
+    }
+  },
+  "model_probe_run_on_start": {
+    "description": "启动后立即探测一次模型",
+    "type": "bool",
+    "hint": "开启后插件启动时会立刻探测一次模型并写入历史，不会主动推送图片。",
+    "default": false
+  },
+  "model_history_size": {
+    "description": "模型历史状态格子数量",
+    "type": "int",
+    "hint": "仪表盘里每个模型显示最近多少次探测状态，默认 12 次。",
+    "default": 12,
+    "slider": {
+      "min": 6,
+      "max": 48,
+      "step": 1
+    }
+  },
+  "model_stats_window_hours": {
+    "description": "模型统计窗口小时数",
+    "type": "int",
+    "hint": "用于计算平均延迟、可用性和成功次数的时间范围，默认 24 小时。",
+    "default": 24,
+    "slider": {
+      "min": 1,
+      "max": 168,
+      "step": 1
+    }
+  },
   "model_timeout": {
     "description": "模型探测超时秒数",
     "type": "int",
@@ -90,11 +129,11 @@
   "model_concurrency": {
     "description": "模型检测并发数",
     "type": "int",
-    "hint": "同时探测几个模型，默认 3",
-    "default": 3,
+    "hint": "同时探测几个模型，默认 10",
+    "default": 10,
     "slider": {
       "min": 1,
-      "max": 20,
+      "max": 50,
       "step": 1
     }
   },
@@ -116,31 +155,8 @@
     "default": 0,
     "slider": {
       "min": 0,
-      "max": 30,
+      "max": 100,
       "step": 1
     }
-  },
-  "auto_dashboard_interval_hours": {
-    "description": "仪表盘定时推送间隔",
-    "type": "float",
-    "hint": "单位：小时。0 表示关闭定时推送；例如 6 表示每 6 小时推送一次。",
-    "default": 0,
-    "slider": {
-      "min": 0,
-      "max": 72,
-      "step": 0.5
-    }
-  },
-  "auto_dashboard_run_on_start": {
-    "description": "启动后立即推送一次",
-    "type": "bool",
-    "hint": "开启后插件启动时会立刻生成并推送一次仪表盘；需要已经记住过推送会话才会发送。",
-    "default": false
-  },
-  "auto_dashboard_remember_command_session": {
-    "description": "自动记住命令会话用于定时推送",
-    "type": "bool",
-    "hint": "开启后，在某个群聊或私聊执行过运行状态/模型检测命令，后续定时仪表盘会推送到该会话。",
-    "default": true
   }
 }

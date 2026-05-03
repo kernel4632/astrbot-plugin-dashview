@@ -10,7 +10,8 @@
 为什么模型检测这里用假数据：
 本地运行 test.py 时通常没有 AstrBot 的 context，也拿不到 WebUI 里的 Provider。
 所以这个文件不做真实模型请求，只模拟正常、较慢、错误三种状态，方便你看卡片样式。
-真实插件运行时，main.py 会调用 ModelProbe.probe() 生成同样结构的数据。
+模拟数据里已经包含历史状态格子、历史平均延迟、可用性、成功次数和速度曲线，等价于后台定时探测一段时间后的展示效果。
+真实插件运行时，main.py 会定时调用 ModelProbe.probe() 写入历史，用户查看仪表盘时会看到同样结构的数据。
 
 最常见的用法只有一个：
 python test.py
@@ -56,14 +57,14 @@ def readAvatar() -> bytes | None:
 
 def buildFakeModelReport() -> dict[str, Any]:
     """
-    这个函数构造一份和 ModelProbe.probe() 返回值同形状的假数据。
+    这个函数构造一份和 ModelProbe.probe() 加历史合并之后同形状的假数据。
 
     里面故意放了三类模型：
     - ok：正常模型，用绿色展示
     - slow：较慢模型，用黄色展示
     - error：异常模型，用红色展示，并显示错误原因
 
-    这样你不用真的配置模型，也能看到模板底部所有状态的展示效果。
+    这样你不用真的配置模型，也能看到定时探测历史在仪表盘底部的展示效果。
     """
     startedAt = time()
     providers = [

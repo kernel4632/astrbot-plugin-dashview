@@ -46,7 +46,7 @@ class ModelProbe:
 
     config 里可以放这些可选项：
     - timeout: 单个模型探针的超时秒数，默认 30
-    - concurrency: 全局并发数，默认 3
+    - concurrency: 全局并发数，默认 10
     - slow_ms: 超过这个毫秒数就算"较慢"，默认 8000
     - probe_message: 自定义探测消息，不传就用默认的
     - probe_system: 自定义系统提示词
@@ -55,7 +55,7 @@ class ModelProbe:
 
     # —— 默认配置，外部不传就用这些 ——
     defaultTimeout = 30
-    defaultConcurrency = 3
+    defaultConcurrency = 10
     defaultSlowMs = 8000
     defaultMaxModels = 0
 

@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://json-schema.org/draft-07/schema#
 name: astrbot_plugin_dashview
 display_name: DashView
-version: 1.0.7
-description: 运行状态仪表盘插件，实时采集系统状态并在底部用卡片展示模型连通性检测结果，支持定时自动推送。
+version: 1.0.8
+description: 运行状态仪表盘插件，实时采集系统状态并在底部用卡片展示模型连通性检测结果，支持后台定时探测模型并展示历史状态。
 author: Kernyr
 support_platforms:
   - aiocqhttp
