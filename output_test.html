@@ -761,7 +761,7 @@ body {
 .model-curve-box {
 	position: relative;
 	margin-top: 12px;
-	height: 68px;
+	height: 92px;
 	border-radius: 15px;
 	background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.28));
 	border: 1px solid rgba(255, 255, 255, 0.54);
@@ -770,9 +770,9 @@ body {
 
 .model-curve {
 	position: absolute;
-	inset: 8px 12px 20px;
+	inset: 8px 12px 34px;
 	width: calc(100% - 24px);
-	height: 38px;
+	height: 44px;
 	overflow: visible;
 }
 
@@ -816,7 +816,7 @@ body {
 	position: absolute;
 	left: 12px;
 	right: 12px;
-	bottom: 5px;
+	bottom: 27px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -826,16 +826,22 @@ body {
 }
 
 .model-history {
-	display: flex;
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	bottom: 8px;
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(0, 1fr);
 	align-items: stretch;
 	gap: 4px;
-	margin-top: 12px;
 	height: 14px;
 }
 
 .model-history-bar {
-	flex: 1 1 0;
-	min-width: 4px;
+	display: block;
+	width: 100%;
+	min-width: 0;
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.62);
 }
@@ -921,7 +927,7 @@ html,body{margin:0;padding:0;width:900px;}
         <div class="meter-dot meter-dot-cyan"></div>
         <div class="meter-name">CPU</div>
       </div>
-      <div class="meter-value">35.2%</div>
+      <div class="meter-value">36.9%</div>
       <div class="meter-detail">当前处理器占用</div>
       <div class="meter-wave meter-wave-cyan meter-wave-1"></div>
     </div>
@@ -931,8 +937,8 @@ html,body{margin:0;padding:0;width:900px;}
         <div class="meter-dot meter-dot-mint"></div>
         <div class="meter-name">内存</div>
       </div>
-      <div class="meter-value">74.3%</div>
-      <div class="meter-detail">23.4 GB / 31.5 GB</div>
+      <div class="meter-value">72.1%</div>
+      <div class="meter-detail">22.7 GB / 31.5 GB</div>
       <div class="meter-wave meter-wave-mint meter-wave-2"></div>
     </div>
     
@@ -967,7 +973,7 @@ html,body{margin:0;padding:0;width:900px;}
             <div class="service-target">https://api.hujiarong.site/</div>
           </div>
           <div class="service-meta">
-            <div class="service-latency">1338.84ms</div>
+            <div class="service-latency">1617.82ms</div>
             <span class="service-badge badge-green">正常</span>
           </div>
         </div>
@@ -983,7 +989,7 @@ html,body{margin:0;padding:0;width:900px;}
             <div class="service-target">https://www.hujiarong.site/</div>
           </div>
           <div class="service-meta">
-            <div class="service-latency">770.59ms</div>
+            <div class="service-latency">1810.89ms</div>
             <span class="service-badge badge-green">正常</span>
           </div>
         </div>
@@ -1115,34 +1121,33 @@ html,body{margin:0;padding:0;width:900px;}
               <span>20:00</span>
               
             </div>
-          </div>
-
-          <div class="model-history" title="最近 12 次检测">
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
+            <div class="model-history" title="最近 12 次检测">
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+            </div>
           </div>
 
           
@@ -1192,34 +1197,33 @@ html,body{margin:0;padding:0;width:900px;}
               <span>20:00</span>
               
             </div>
-          </div>
-
-          <div class="model-history" title="最近 12 次检测">
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-slow"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
+            <div class="model-history" title="最近 12 次检测">
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+            </div>
           </div>
 
           
@@ -1269,34 +1273,33 @@ html,body{margin:0;padding:0;width:900px;}
               <span>20:00</span>
               
             </div>
-          </div>
-
-          <div class="model-history" title="最近 12 次检测">
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-slow"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-slow"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-slow"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-ok"></span>
-            
-            <span class="model-history-bar model-history-slow"></span>
-            
-            <span class="model-history-bar model-history-slow"></span>
-            
+            <div class="model-history" title="最近 12 次检测">
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-ok"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+            </div>
           </div>
 
           

@@ -182,12 +182,11 @@
               <span>{{ label }}</span>
               {% endfor %}
             </div>
-          </div>
-
-          <div class="model-history" title="最近 12 次检测">
-            {% for status in model.history %}
-            <span class="model-history-bar model-history-{{ status }}"></span>
-            {% endfor %}
+            <div class="model-history" title="最近 {{ model.history | length }} 次检测">
+              {% for status in model.history %}
+              <span class="model-history-bar model-history-{{ status }}"></span>
+              {% endfor %}
+            </div>
           </div>
 
           {% if model.reply_preview %}
