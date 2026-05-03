@@ -9,8 +9,7 @@
 
 为什么模型检测这里用假数据：
 本地运行 test.py 时通常没有 AstrBot 的 context，也拿不到 WebUI 里的 Provider。
-所以这个文件不做真实模型请求，只模拟正常、较慢、错误三种状态，方便你看卡片样式。
-模拟数据里已经包含历史状态格子、历史平均延迟、可用性、成功次数和速度曲线，等价于后台定时探测一段时间后的展示效果。
+所以这个文件不做真实模型请求，只模拟三种不同长度的随机大幅波动历史数据。
 真实插件运行时，main.py 会定时调用 ModelProbe.probe() 写入历史，用户查看仪表盘时会看到同样结构的数据。
 
 最常见的用法只有一个：
@@ -24,6 +23,7 @@ output_test.jpg   可以直接查看机器人最终会发送的图片效果
 from __future__ import annotations
 
 import asyncio
+import random
 from pathlib import Path
 from time import time
 from typing import Any
@@ -55,81 +55,118 @@ def readAvatar() -> bytes | None:
     return avatarBytes
 
 
+def randomHistory(count: int, baseStatus: str) -> list[str]:
+    """
+    这个函数随机生成指定数量的历史状态格子。
+    baseStatus 是主状态，随机混入少量其他状态。
+    """
+    statuses: list[str] = []
+    for _ in range(count):
+        roll = random.random()
+        if baseStatus == "ok" and roll < 0.15:
+            statuses.append("slow")
+        elif baseStatus == "slow" and roll < 0.3:
+            statuses.append(random.choice(["ok", "error"]))
+        elif baseStatus == "error" and roll < 0.25:
+            statuses.append("slow")
+        else:
+            statuses.append(baseStatus)
+    return statuses
+
+
+def randomCurvePoints(count: int, baseLatency: int) -> list[dict[str, int]]:
+    """
+    这个函数生成大幅波动的随机曲线点。
+    每个点的延迟在基准值的 0.4 到 1.6 倍之间大幅波动。
+    曲线坐标映射到 0-100 宽 / 0-40 高的 SVG 坐标。
+    """
+    maxLatency = max(1000, int(baseLatency * 1.8))
+    points: list[dict[str, int]] = []
+    for index in range(count):
+        x = round(index * 100 / (count - 1)) if count > 1 else 0
+        # 大幅随机波动：基准值的 0.4 到 1.6 倍
+        jitter = random.uniform(0.4, 1.6)
+        latencyValue = int(baseLatency * jitter)
+        y = 40 - round(latencyValue / maxLatency * 34)
+        points.append({"x": x, "y": max(4, min(38, y))})
+    return points
+
+
+def randomTimeLabels(count: int) -> list[str]:
+    """这个函数生成时间轴标签，这里用假数字表示探测序号。"""
+    if count <= 2:
+        return [f"#{i+1}" for i in range(count)]
+    return [f"#{1}", f"#{count // 2 + 1}", f"#{count}"]
+
+
 def buildFakeModelReport() -> dict[str, Any]:
     """
     这个函数构造一份和 ModelProbe.probe() 加历史合并之后同形状的假数据。
 
-    里面故意放了三类模型：
-    - ok：正常模型，用绿色展示
-    - slow：较慢模型，用黄色展示
-    - error：异常模型，用红色展示，并显示错误原因
-
-    这样你不用真的配置模型，也能看到定时探测历史在仪表盘底部的展示效果。
+    三个模型分别用不同数量的历史格子（4、6、5），
+    每个模型的延迟都大幅随机波动，曲线点数量等于格子数量。
+    这样你能同时看到三种长度状态格子的展示效果。
     """
     startedAt = time()
+    random.seed(42)
+
+    # 三个模型分别定义基础参数
+    modelDefs = [
+        {"model": "gpt-4o-mini", "status": "ok", "baseLatency": 1200, "historyCount": 4},
+        {"model": "gpt-4o", "status": "slow", "baseLatency": 5200, "historyCount": 6},
+        {"model": "o3-mini", "status": "error", "baseLatency": 15000, "historyCount": 5},
+    ]
+
+    results: list[dict[str, Any]] = []
+    for definition in modelDefs:
+        history = randomHistory(definition["historyCount"], definition["status"])
+        curvePoints = randomCurvePoints(definition["historyCount"], definition["baseLatency"])
+        latencies = [int(point["y"] * definition["baseLatency"] / 34) for point in curvePoints]
+        avgLatency = sum(latencies) // len(latencies) if latencies else definition["baseLatency"]
+        okCount = sum(1 for s in history if s == "ok")
+        errorCount = sum(1 for s in history if s == "error")
+
+        results.append({
+            "model": definition["model"],
+            "status": definition["status"],
+            "latencyMs": latencies[-1],
+            "replyPreview": "OK" if definition["status"] != "error" else "",
+            "avgLatencyText": f"{avgLatency} ms",
+            "availability": f"{okCount / len(history) * 100:.2f}%",
+            "weeklySuccessText": f"{okCount}/{len(history)}",
+            "history": history,
+            "curvePoints": curvePoints,
+            "timeLabels": randomTimeLabels(definition["historyCount"]),
+            "error": "TimeoutError: 连接超时" if definition["status"] == "error" else "",
+        })
+
+    okCount = sum(1 for r in results if r["status"] == "ok")
+    slowCount = sum(1 for r in results if r["status"] == "slow")
+    errorCount = sum(1 for r in results if r["status"] == "error")
+
+    # Provider 分组状态取决于是否包含错误模型
+    groupStatus = "error" if errorCount > 0 else ("slow" if slowCount > 0 else "ok")
+    groupLabel = {"ok": "正常", "slow": "较慢", "error": "异常"}[groupStatus]
+
     providers = [
         {
             "groupId": "openai-main",
             "displayName": "OpenAI 主线路",
-            "modelCount": 3,
-            "okCount": 2,
-            "slowCount": 1,
-            "errorCount": 0,
-            "status": "slow",
-            "statusLabel": "较慢",
-            "results": [
-                {
-                    "model": "gpt-4o-mini",
-                    "status": "ok",
-                    "latencyMs": 1260,
-                    "replyPreview": "OK",
-                    "avgLatencyText": "1130 ms",
-                    "availability": "100.00%",
-                    "weeklySuccessText": "12/12",
-                    "history": ["ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"],
-                    "curvePoints": [{"x": 0, "y": 27}, {"x": 16, "y": 20}, {"x": 33, "y": 25}, {"x": 50, "y": 13}, {"x": 66, "y": 22}, {"x": 83, "y": 10}, {"x": 100, "y": 18}],
-                    "timeLabels": ["18:00", "19:00", "20:00"],
-                    "error": "",
-                },
-                {
-                    "model": "gpt-4o",
-                    "status": "ok",
-                    "latencyMs": 2380,
-                    "replyPreview": "OK",
-                    "avgLatencyText": "2140 ms",
-                    "availability": "100.00%",
-                    "weeklySuccessText": "12/12",
-                    "history": ["ok", "ok", "ok", "ok", "slow", "ok", "ok", "ok", "ok", "ok", "ok", "ok"],
-                    "curvePoints": [{"x": 0, "y": 30}, {"x": 16, "y": 23}, {"x": 33, "y": 19}, {"x": 50, "y": 26}, {"x": 66, "y": 15}, {"x": 83, "y": 21}, {"x": 100, "y": 16}],
-                    "timeLabels": ["18:00", "19:00", "20:00"],
-                    "error": "",
-                },
-                {
-                    "model": "o3-mini",
-                    "status": "slow",
-                    "latencyMs": 9360,
-                    "replyPreview": "OK",
-                    "avgLatencyText": "8420 ms",
-                    "availability": "91.67%",
-                    "weeklySuccessText": "11/12",
-                    "history": ["ok", "ok", "slow", "ok", "ok", "slow", "ok", "slow", "ok", "ok", "slow", "slow"],
-                    "curvePoints": [{"x": 0, "y": 31}, {"x": 16, "y": 24}, {"x": 33, "y": 27}, {"x": 50, "y": 16}, {"x": 66, "y": 21}, {"x": 83, "y": 8}, {"x": 100, "y": 12}],
-                    "timeLabels": ["18:00", "19:00", "20:00"],
-                    "error": "",
-                },
-            ],
+            "modelCount": len(results),
+            "okCount": okCount,
+            "slowCount": slowCount,
+            "errorCount": errorCount,
+            "status": groupStatus,
+            "statusLabel": groupLabel,
+            "results": results,
         },
     ]
-    allModels = [model for provider in providers for model in provider["results"]]
-    okCount = sum(1 for model in allModels if model["status"] == "ok")
-    slowCount = sum(1 for model in allModels if model["status"] == "slow")
-    errorCount = sum(1 for model in allModels if model["status"] == "error")
 
     return {
         "title": "模型连通性",
         "checkedAt": "2026-05-03 20:00:00",
         "elapsedMs": int((time() - startedAt) * 1000) + 1250,
-        "total": len(allModels),
+        "total": len(results),
         "okCount": okCount,
         "slowCount": slowCount,
         "errorCount": errorCount,
@@ -158,6 +195,8 @@ def printResult(computer: dict[str, Any], services: list[dict[str, Any]], summar
     print(f"Provider 数: {modelReport.get('providerCount')}，模型数: {modelReport.get('total')}，正常: {modelReport.get('okCount')}，较慢: {modelReport.get('slowCount')}，错误: {modelReport.get('errorCount')}")
     for provider in modelReport.get("providers", []):
         print(f"Provider {provider.get('displayName')}: {provider.get('statusLabel')}，模型数 {provider.get('modelCount')}")
+        for item in provider.get("results", []):
+            print(f"  {item.get('model')}: {item.get('status')} 延迟 {item.get('latencyMs')}ms 格子数 {len(item.get('history', []))}")
 
 
 async def main() -> None:

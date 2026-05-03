@@ -255,22 +255,33 @@ class Data:
         """
         status = str(item.get("status") or "error")
         latency = int(item.get("latencyMs", 0) or 0)
-        history = cls.buildModelHistory(status)
-        curvePoints = cls.buildModelCurvePoints(latency, status)
+
+        # 历史格子：优先读取已有真实历史，没有则用当前状态推导一条包含波动的假历史
+        history = item.get("history")
+        if not history:
+            history = cls.buildModelHistory(status)
+
+        # 曲线点：优先读取已有真实曲线，没有则用当前状态推导，且点数 = 格子数
+        curvePoints = item.get("curvePoints")
+        if not curvePoints:
+            curvePoints = cls.buildModelCurvePoints(latency, status, len(history))
+
         return {
             "name": item.get("model") or "unknown",
             "status": status,
             "status_text": cls.modelStatusText(status),
             "latency_text": f"{latency} ms",
+            # 历史统计指标：优先读取 main.py 写入的真实数据，没有则用假数据
             "avg_latency_text": item.get("avgLatencyText") or cls.buildAverageLatencyText(latency, status),
             "availability_text": item.get("availability") or cls.buildAvailabilityText(status),
             "success_text": item.get("weeklySuccessText") or cls.buildSuccessText(status),
             "error_text": item.get("error") or "",
             "reply_preview": item.get("replyPreview") or "",
-            "history": item.get("history") or history,
-            "curve_points": item.get("curvePoints") or curvePoints,
-            "curve_path": cls.buildCurvePath(item.get("curvePoints") or curvePoints),
-            "curve_area_path": cls.buildCurveAreaPath(item.get("curvePoints") or curvePoints),
+            "history": history,
+            "curve_points": curvePoints,
+            # 曲线 path 从点数生成
+            "curve_path": cls.buildCurvePath(curvePoints),
+            "curve_area_path": cls.buildCurveAreaPath(curvePoints),
             "time_labels": item.get("timeLabels") or ["前", "中", "今"],
         }
 
@@ -284,19 +295,24 @@ class Data:
         return ["ok", "slow", "error", "ok", "error", "error", "slow", "error", "ok", "error", "error", "error"]
 
     @classmethod
-    def buildModelCurvePoints(cls, latency: int, status: str) -> list[dict[str, int]]:
-        """这个函数生成响应速度曲线点；真实历史缺失时，用当前延迟推导一条可读曲线。"""
+    def buildModelCurvePoints(cls, latency: int, status: str, count: int = 12) -> list[dict[str, int]]:
+        """
+        这个函数生成响应速度曲线点；真实历史缺失时，用当前延迟推导一条可读曲线。
+        曲线点数 = 状态格子数，保证视觉上一一对应。
+        """
         base = max(300, latency)
-        rates = [0.72, 0.58, 0.86, 0.64, 0.96, 0.7, 1.0]
-        if status == "slow":
-            rates = [0.42, 0.65, 0.52, 0.88, 0.7, 1.0, 0.92]
-        if status == "error":
-            rates = [0.28, 0.76, 0.38, 0.92, 0.54, 1.0, 0.84]
+        # 根据状态生成不同波动幅度的延迟比例（数量 = count）
+        if status == "ok":
+            rates = [0.7 + 0.3 * (i % 3) / 3 for i in range(count)]  # 小幅度波动
+        elif status == "slow":
+            rates = [0.5 + 0.5 * (i % 4) / 4 for i in range(count)]  # 中等幅度波动
+        else:
+            rates = [0.3 + 0.7 * (i % 5) / 5 for i in range(count)]  # 大幅度波动
 
         maxLatency = max(1000, int(base * max(rates)))
         points: list[dict[str, int]] = []
         for index, rate in enumerate(rates):
-            x = round(index * 100 / (len(rates) - 1))
+            x = round(index * 100 / (count - 1)) if count > 1 else 0
             latencyValue = int(base * rate)
             y = 40 - round(latencyValue / maxLatency * 34)
             points.append({"x": x, "y": max(4, min(38, y))})

@@ -830,17 +830,14 @@ body {
 	left: 12px;
 	right: 12px;
 	bottom: 8px;
-	display: grid;
-	grid-auto-flow: column;
-	grid-auto-columns: minmax(0, 1fr);
+	display: flex;
 	align-items: stretch;
 	gap: 4px;
 	height: 14px;
 }
 
 .model-history-bar {
-	display: block;
-	width: 100%;
+	flex: 1 1 0;
 	min-width: 0;
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.62);
@@ -927,7 +924,7 @@ html,body{margin:0;padding:0;width:900px;}
         <div class="meter-dot meter-dot-cyan"></div>
         <div class="meter-name">CPU</div>
       </div>
-      <div class="meter-value">36.9%</div>
+      <div class="meter-value">4.3%</div>
       <div class="meter-detail">当前处理器占用</div>
       <div class="meter-wave meter-wave-cyan meter-wave-1"></div>
     </div>
@@ -937,8 +934,8 @@ html,body{margin:0;padding:0;width:900px;}
         <div class="meter-dot meter-dot-mint"></div>
         <div class="meter-name">内存</div>
       </div>
-      <div class="meter-value">72.1%</div>
-      <div class="meter-detail">22.7 GB / 31.5 GB</div>
+      <div class="meter-value">76.4%</div>
+      <div class="meter-detail">24.0 GB / 31.5 GB</div>
       <div class="meter-wave meter-wave-mint meter-wave-2"></div>
     </div>
     
@@ -948,7 +945,7 @@ html,body{margin:0;padding:0;width:900px;}
         <div class="meter-name">磁盘</div>
       </div>
       <div class="meter-value">70.3%</div>
-      <div class="meter-detail">532.4 GB / 757.2 GB</div>
+      <div class="meter-detail">532.5 GB / 757.2 GB</div>
       <div class="meter-wave meter-wave-purple meter-wave-3"></div>
     </div>
     
@@ -973,7 +970,7 @@ html,body{margin:0;padding:0;width:900px;}
             <div class="service-target">https://api.hujiarong.site/</div>
           </div>
           <div class="service-meta">
-            <div class="service-latency">1617.82ms</div>
+            <div class="service-latency">1418.19ms</div>
             <span class="service-badge badge-green">正常</span>
           </div>
         </div>
@@ -989,7 +986,7 @@ html,body{margin:0;padding:0;width:900px;}
             <div class="service-target">https://www.hujiarong.site/</div>
           </div>
           <div class="service-meta">
-            <div class="service-latency">1810.89ms</div>
+            <div class="service-latency">1721.6ms</div>
             <span class="service-badge badge-green">正常</span>
           </div>
         </div>
@@ -1050,16 +1047,16 @@ html,body{margin:0;padding:0;width:900px;}
       <div class="section-kicker">Model Connectivity</div>
       <h3 class="section-title">模型连通性</h3>
     </div>
-    <div class="model-overall model-overall-ok">
+    <div class="model-overall model-overall-error">
       <span class="model-overall-dot"></span>
-      全部可用
+      存在异常
     </div>
   </div>
 
   <div class="model-summary-row">
-    <div class="model-pill model-pill-ok"><span></span>2 正常</div>
+    <div class="model-pill model-pill-ok"><span></span>1 正常</div>
     <div class="model-pill model-pill-slow"><span></span>1 较慢</div>
-    <div class="model-pill model-pill-error"><span></span>0 错误</div>
+    <div class="model-pill model-pill-error"><span></span>1 错误</div>
     <div class="model-pill model-pill-neutral">1 个 Provider</div>
     <div class="model-pill model-pill-neutral">3 个模型</div>
     <div class="model-summary-time">更新 2026-05-03 20:00:00 · 耗时 1250ms</div>
@@ -1075,7 +1072,7 @@ html,body{margin:0;padding:0;width:900px;}
           <div class="model-provider-name">OpenAI 主线路</div>
           <div class="model-provider-sub">openai-main · 3 models</div>
         </div>
-        <div class="model-provider-badge model-status-slow">较慢</div>
+        <div class="model-provider-badge model-status-error">异常</div>
       </header>
 
       <div class="model-row-list">
@@ -1091,133 +1088,41 @@ html,body{margin:0;padding:0;width:900px;}
           <div class="model-metric-grid">
             <div class="model-metric">
               <label>当前延迟</label>
-              <strong>1260 ms</strong>
+              <strong>1058 ms</strong>
             </div>
             <div class="model-metric">
               <label>24h平均</label>
-              <strong>1130 ms</strong>
+              <strong>661 ms</strong>
             </div>
             <div class="model-metric">
               <label>可用性</label>
-              <strong class="model-value-ok">100.00%</strong>
+              <strong class="model-value-ok">75.00%</strong>
             </div>
             <div class="model-metric">
               <label>周成功次数</label>
-              <strong class="model-value-ok">12/12</strong>
+              <strong class="model-value-ok">3/4</strong>
             </div>
           </div>
 
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none">
-              <path d="M 0 27 L 16 20 L 33 25 L 50 13 L 66 22 L 83 10 L 100 18 L 100 40 L 0 40 Z" class="model-curve-area model-curve-ok"></path>
-              <path d="M 0 27 L 16 20 L 33 25 L 50 13 L 66 22 L 83 10 L 100 18" class="model-curve-line model-curve-ok"></path>
+              <path d="M 0 16 L 33 17 L 67 12 L 100 30 L 100 40 L 0 40 Z" class="model-curve-area model-curve-ok"></path>
+              <path d="M 0 16 L 33 17 L 67 12 L 100 30" class="model-curve-line model-curve-ok"></path>
             </svg>
             <div class="model-time-axis">
               
-              <span>18:00</span>
+              <span>#1</span>
               
-              <span>19:00</span>
+              <span>#3</span>
               
-              <span>20:00</span>
-              
-            </div>
-            <div class="model-history" title="最近 12 次检测">
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
+              <span>#4</span>
               
             </div>
-          </div>
-
-          
-          <div class="model-reply-preview">响应摘要：OK</div>
-          
-          
-        </div>
-        
-        <div class="model-row-card model-row-ok">
-          <div class="model-row-top">
-            <div class="model-name-wrap">
-              <span class="model-dot model-dot-ok"></span>
-              <span class="model-name-text">gpt-4o</span>
-            </div>
-            <span class="model-status-badge model-status-ok">正常</span>
-          </div>
-          <div class="model-metric-grid">
-            <div class="model-metric">
-              <label>当前延迟</label>
-              <strong>2380 ms</strong>
-            </div>
-            <div class="model-metric">
-              <label>24h平均</label>
-              <strong>2140 ms</strong>
-            </div>
-            <div class="model-metric">
-              <label>可用性</label>
-              <strong class="model-value-ok">100.00%</strong>
-            </div>
-            <div class="model-metric">
-              <label>周成功次数</label>
-              <strong class="model-value-ok">12/12</strong>
-            </div>
-          </div>
-
-          <div class="model-curve-box">
-            <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none">
-              <path d="M 0 30 L 16 23 L 33 19 L 50 26 L 66 15 L 83 21 L 100 16 L 100 40 L 0 40 Z" class="model-curve-area model-curve-ok"></path>
-              <path d="M 0 30 L 16 23 L 33 19 L 50 26 L 66 15 L 83 21 L 100 16" class="model-curve-line model-curve-ok"></path>
-            </svg>
-            <div class="model-time-axis">
-              
-              <span>18:00</span>
-              
-              <span>19:00</span>
-              
-              <span>20:00</span>
-              
-            </div>
-            <div class="model-history" title="最近 12 次检测">
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
+            <div class="model-history" title="最近 4 次检测">
               
               <span class="model-history-bar model-history-ok"></span>
               
               <span class="model-history-bar model-history-slow"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
               
               <span class="model-history-bar model-history-ok"></span>
               
@@ -1236,48 +1141,44 @@ html,body{margin:0;padding:0;width:900px;}
           <div class="model-row-top">
             <div class="model-name-wrap">
               <span class="model-dot model-dot-slow"></span>
-              <span class="model-name-text">o3-mini</span>
+              <span class="model-name-text">gpt-4o</span>
             </div>
             <span class="model-status-badge model-status-slow">较慢</span>
           </div>
           <div class="model-metric-grid">
             <div class="model-metric">
               <label>当前延迟</label>
-              <strong>9360 ms</strong>
+              <strong>4435 ms</strong>
             </div>
             <div class="model-metric">
               <label>24h平均</label>
-              <strong>8420 ms</strong>
+              <strong>3262 ms</strong>
             </div>
             <div class="model-metric">
               <label>可用性</label>
-              <strong class="model-value-slow">91.67%</strong>
+              <strong class="model-value-slow">33.33%</strong>
             </div>
             <div class="model-metric">
               <label>周成功次数</label>
-              <strong class="model-value-slow">11/12</strong>
+              <strong class="model-value-slow">2/6</strong>
             </div>
           </div>
 
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none">
-              <path d="M 0 31 L 16 24 L 33 27 L 50 16 L 66 21 L 83 8 L 100 12 L 100 40 L 0 40 Z" class="model-curve-area model-curve-slow"></path>
-              <path d="M 0 31 L 16 24 L 33 27 L 50 16 L 66 21 L 83 8 L 100 12" class="model-curve-line model-curve-slow"></path>
+              <path d="M 0 23 L 20 22 L 40 26 L 60 13 L 80 15 L 100 29 L 100 40 L 0 40 Z" class="model-curve-area model-curve-slow"></path>
+              <path d="M 0 23 L 20 22 L 40 26 L 60 13 L 80 15 L 100 29" class="model-curve-line model-curve-slow"></path>
             </svg>
             <div class="model-time-axis">
               
-              <span>18:00</span>
+              <span>#1</span>
               
-              <span>19:00</span>
+              <span>#4</span>
               
-              <span>20:00</span>
+              <span>#6</span>
               
             </div>
-            <div class="model-history" title="最近 12 次检测">
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
+            <div class="model-history" title="最近 6 次检测">
               
               <span class="model-history-bar model-history-slow"></span>
               
@@ -1286,14 +1187,6 @@ html,body{margin:0;padding:0;width:900px;}
               <span class="model-history-bar model-history-ok"></span>
               
               <span class="model-history-bar model-history-slow"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-slow"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
-              
-              <span class="model-history-bar model-history-ok"></span>
               
               <span class="model-history-bar model-history-slow"></span>
               
@@ -1305,6 +1198,68 @@ html,body{margin:0;padding:0;width:900px;}
           
           <div class="model-reply-preview">响应摘要：OK</div>
           
+          
+        </div>
+        
+        <div class="model-row-card model-row-error">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-error"></span>
+              <span class="model-name-text">o3-mini</span>
+            </div>
+            <span class="model-status-badge model-status-error">错误</span>
+          </div>
+          <div class="model-metric-grid">
+            <div class="model-metric">
+              <label>当前延迟</label>
+              <strong>13676 ms</strong>
+            </div>
+            <div class="model-metric">
+              <label>24h平均</label>
+              <strong>11470 ms</strong>
+            </div>
+            <div class="model-metric">
+              <label>可用性</label>
+              <strong class="model-value-error">0.00%</strong>
+            </div>
+            <div class="model-metric">
+              <label>周成功次数</label>
+              <strong class="model-value-error">0/5</strong>
+            </div>
+          </div>
+
+          <div class="model-curve-box">
+            <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <path d="M 0 24 L 25 24 L 50 25 L 75 26 L 100 31 L 100 40 L 0 40 Z" class="model-curve-area model-curve-error"></path>
+              <path d="M 0 24 L 25 24 L 50 25 L 75 26 L 100 31" class="model-curve-line model-curve-error"></path>
+            </svg>
+            <div class="model-time-axis">
+              
+              <span>#1</span>
+              
+              <span>#3</span>
+              
+              <span>#5</span>
+              
+            </div>
+            <div class="model-history" title="最近 5 次检测">
+              
+              <span class="model-history-bar model-history-error"></span>
+              
+              <span class="model-history-bar model-history-error"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+              <span class="model-history-bar model-history-error"></span>
+              
+              <span class="model-history-bar model-history-slow"></span>
+              
+            </div>
+          </div>
+
+          
+          
+          <div class="model-error-text">TimeoutError: 连接超时</div>
           
         </div>
         

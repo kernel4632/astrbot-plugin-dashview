@@ -812,17 +812,14 @@ body {
 	left: 12px;
 	right: 12px;
 	bottom: 8px;
-	display: grid;
-	grid-auto-flow: column;
-	grid-auto-columns: minmax(0, 1fr);
+	display: flex;
 	align-items: stretch;
 	gap: 4px;
 	height: 14px;
 }
 
 .model-history-bar {
-	display: block;
-	width: 100%;
+	flex: 1 1 0;
 	min-width: 0;
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.62);
