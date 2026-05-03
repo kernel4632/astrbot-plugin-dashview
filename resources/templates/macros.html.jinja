@@ -5,7 +5,7 @@
       <img class="hero-avatar" data-src="/api/bot_avatar/{{ info.self_id }}" alt="Avatar" />
     </div>
     <div class="hero-content">
-      <h1 class="hero-title">阿柯AKer</h1>
+      <h1 class="hero-title">{{ d.hostname }}</h1>
     </div>
   </div>
   <div class="hero-side">
@@ -87,5 +87,121 @@
       </div>
     </div>
   </div>
+</div>
+{% endmacro %}
+
+{% macro model_connectivity(d) %}
+<svg width="0" height="0" class="model-gradient-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="model-gradient-ok" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#9be7c4" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#9be7c4" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="model-gradient-slow" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffc58c" stop-opacity="0.58" />
+      <stop offset="100%" stop-color="#ffc58c" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="model-gradient-error" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff9db0" stop-opacity="0.58" />
+      <stop offset="100%" stop-color="#ff9db0" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+</svg>
+<div class="panel-card model-panel">
+  <div class="section-head compact">
+    <div>
+      <div class="section-kicker">Model Connectivity</div>
+      <h3 class="section-title">模型连通性</h3>
+    </div>
+    <div class="model-overall model-overall-{{ d.model_status.overall_status }}">
+      <span class="model-overall-dot"></span>
+      {{ d.model_status.overall_text }}
+    </div>
+  </div>
+
+  <div class="model-summary-row">
+    <div class="model-pill model-pill-ok"><span></span>{{ d.model_status.ok_count }} 正常</div>
+    <div class="model-pill model-pill-slow"><span></span>{{ d.model_status.slow_count }} 较慢</div>
+    <div class="model-pill model-pill-error"><span></span>{{ d.model_status.error_count }} 错误</div>
+    <div class="model-pill model-pill-neutral">{{ d.model_status.provider_count }} 个 Provider</div>
+    <div class="model-pill model-pill-neutral">{{ d.model_status.total }} 个模型</div>
+    <div class="model-summary-time">更新 {{ d.model_status.checked_at }} · 耗时 {{ d.model_status.elapsed_text }}</div>
+  </div>
+
+  {% if d.model_status.empty_text %}
+  <div class="model-empty-card">{{ d.model_status.empty_text }}</div>
+  {% else %}
+  <div class="model-provider-grid">
+    {% for provider in d.model_status.providers %}
+    <article class="model-provider-card">
+      <header class="model-provider-head">
+        <div class="model-provider-mark">{{ provider.name[:1] | upper }}</div>
+        <div class="model-provider-info">
+          <div class="model-provider-name">{{ provider.name }}</div>
+          <div class="model-provider-sub">{{ provider.id }} · {{ provider.model_count }} models</div>
+        </div>
+        <div class="model-provider-badge model-status-{{ provider.status }}">{{ provider.status_text }}</div>
+      </header>
+
+      <div class="model-row-list">
+        {% for model in provider.models %}
+        <div class="model-row-card model-row-{{ model.status }}">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-{{ model.status }}"></span>
+              <span class="model-name-text">{{ model.name }}</span>
+            </div>
+            <span class="model-status-badge model-status-{{ model.status }}">{{ model.status_text }}</span>
+          </div>
+          <div class="model-metric-grid">
+            <div class="model-metric">
+              <label>当前延迟</label>
+              <strong>{{ model.latency_text }}</strong>
+            </div>
+            <div class="model-metric">
+              <label>24h平均</label>
+              <strong>{{ model.avg_latency_text }}</strong>
+            </div>
+            <div class="model-metric">
+              <label>可用性</label>
+              <strong class="model-value-{{ model.status }}">{{ model.availability_text }}</strong>
+            </div>
+            <div class="model-metric">
+              <label>周成功次数</label>
+              <strong class="model-value-{{ model.status }}">{{ model.success_text }}</strong>
+            </div>
+          </div>
+
+          <div class="model-curve-box">
+            <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <path d="{{ model.curve_area_path }}" class="model-curve-area model-curve-{{ model.status }}"></path>
+              <path d="{{ model.curve_path }}" class="model-curve-line model-curve-{{ model.status }}"></path>
+            </svg>
+            <div class="model-time-axis">
+              {% for label in model.time_labels %}
+              <span>{{ label }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="model-history" title="最近 12 次检测">
+            {% for status in model.history %}
+            <span class="model-history-bar model-history-{{ status }}"></span>
+            {% endfor %}
+          </div>
+
+          {% if model.reply_preview %}
+          <div class="model-reply-preview">响应摘要：{{ model.reply_preview }}</div>
+          {% endif %}
+          {% if model.error_text %}
+          <div class="model-error-text">{{ model.error_text }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endmacro %}

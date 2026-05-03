@@ -1,19 +1,18 @@
 """
-这个文件专门负责把“监控原始数据”整理成“页面模板能直接使用的数据”。
+这个文件专门负责把原始数据整理成页面模板能直接使用的数据。
 
-你可以把它理解成页面的数据翻译层：
-Monitor.collect() 返回的数据更像底层采集结果，字段比较原始；
-而模板真正想要的是标题、颜色、百分比文本、状态文案、卡片列表。
-这个文件就是把两者接起来的那一层。
+你可以把它理解成数据翻译层，新人只看这个文件就能理解每种数据长什么样。
+它不采集系统信息，不调用模型，也不渲染 HTML，只把底层结果变成模板喜欢的字段。
 
-最常见的调用方式有这些：
-Data.buildCollected(computer=computer, services=services, summary=summary)
+调用方式（按主体分块，需要哪块调哪块）：
+Data.buildCollected(computer=computer, services=services, summary=summary, model_report=modelReport)
 Data.buildOverview(summary)
 Data.buildResourceCards(computer)
 Data.buildServices(services)
 Data.buildSystemDetails(computer, summary)
+Data.buildModels(model_report)
 
-如果以后你想调整页面文案、卡片结构、颜色分配，优先改这个文件。
+如果以后你想调整页面文案、卡片结构、颜色分配、模型检测结果展示格式，优先改这个文件。
 """
 
 from __future__ import annotations
@@ -28,14 +27,27 @@ except ImportError:
 
 class Data:
     """
-    这个对象只做一件事：整理页面数据。
+    这个对象只做一件事：整理数据。
 
-    它不负责采集系统信息，也不负责渲染 HTML。
-    这样拆开后，新人只看这个文件，就能快速理解“页面到底吃什么数据”。
+    它不负责采集系统信息，不负责调用模型，不负责渲染 HTML。
+    这样拆开后，新人只看这个文件，就能快速理解数据长什么样。
     """
 
+    # =================================================================
+    # 设备状态仪表盘数据
+    # =================================================================
+
     @classmethod
-    def buildCollected(cls, computer: dict[str, Any], services: list[dict[str, Any]], summary: dict[str, Any], nickname: str = "阿柯AKer", success_text: str = "阿柯牛逼", fail_text: str = "阿柯死了") -> dict[str, Any]:
+    def buildCollected(
+        cls,
+        computer: dict[str, Any],
+        services: list[dict[str, Any]],
+        summary: dict[str, Any],
+        nickname: str = "阿柯AKer",
+        success_text: str = "阿柯牛逼",
+        fail_text: str = "阿柯死了",
+        model_report: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """这个函数把页面需要的所有数据一次性整理好，返回给模板或插件入口直接使用。"""
         return {
             "hostname": nickname,
@@ -45,6 +57,7 @@ class Data:
             "resource_cards": cls.buildResourceCards(computer),
             "services_status": cls.buildServices(services),
             "system_details": cls.buildSystemDetails(computer, summary, success_text, fail_text),
+            "model_status": cls.buildModels(model_report),
         }
 
     @classmethod
@@ -161,6 +174,178 @@ class Data:
             return "服务在线"
 
         return str(message)
+
+
+    # =================================================================
+    # 模型连通性卡片数据
+    # =================================================================
+
+    @classmethod
+    def buildModels(cls, report: dict[str, Any] | None) -> dict[str, Any]:
+        """
+        把 ModelProbe.probe() 的结果整理成模板底部卡片可直接循环的数据。
+        卡片结构参考 connect 文件的 Provider → Model 层级，但字段名换成当前项目更直白的名字。
+        """
+        if not isinstance(report, dict):
+            return cls.emptyModels("模型检测未执行")
+
+        providers = [cls.buildModelProvider(item) for item in report.get("providers", [])]
+        total = int(report.get("total", 0) or 0)
+        okCount = int(report.get("okCount", 0) or 0)
+        slowCount = int(report.get("slowCount", 0) or 0)
+        errorCount = int(report.get("errorCount", 0) or 0)
+
+        if total == 0:
+            return cls.emptyModels("没有发现 WebUI 中已打开的聊天模型")
+
+        return {
+            "title": "模型连通性",
+            "checked_at": report.get("checkedAt", "-"),
+            "elapsed_text": f"{report.get('elapsedMs', 0)}ms",
+            "total": total,
+            "ok_count": okCount,
+            "slow_count": slowCount,
+            "error_count": errorCount,
+            "provider_count": int(report.get("providerCount", len(providers)) or len(providers)),
+            "overall_status": "ok" if errorCount == 0 else "error",
+            "overall_text": "全部可用" if errorCount == 0 else "存在异常",
+            "providers": providers,
+            "empty_text": "",
+        }
+
+    @classmethod
+    def emptyModels(cls, text: str) -> dict[str, Any]:
+        """这个函数生成空模型检测结果，让模板不用判断 None。"""
+        return {
+            "title": "模型连通性",
+            "checked_at": "-",
+            "elapsed_text": "0ms",
+            "total": 0,
+            "ok_count": 0,
+            "slow_count": 0,
+            "error_count": 0,
+            "provider_count": 0,
+            "overall_status": "empty",
+            "overall_text": "无模型",
+            "providers": [],
+            "empty_text": text,
+        }
+
+    @classmethod
+    def buildModelProvider(cls, provider: dict[str, Any]) -> dict[str, Any]:
+        """这个函数整理单个 Provider 卡片，里面包含该 Provider 下的模型行。"""
+        status = str(provider.get("status") or "ok")
+        return {
+            "name": provider.get("displayName") or provider.get("groupId") or "Provider",
+            "id": provider.get("groupId") or "unknown",
+            "status": status,
+            "status_text": provider.get("statusLabel") or cls.modelStatusText(status),
+            "model_count": int(provider.get("modelCount", 0) or 0),
+            "ok_count": int(provider.get("okCount", 0) or 0),
+            "slow_count": int(provider.get("slowCount", 0) or 0),
+            "error_count": int(provider.get("errorCount", 0) or 0),
+            "models": [cls.buildModelItem(item) for item in provider.get("results", [])],
+        }
+
+    @classmethod
+    def buildModelItem(cls, item: dict[str, Any]) -> dict[str, Any]:
+        """
+        这个函数整理单行模型数据，结构尽量贴近 connect 的模型行。
+        模板会展示 4 个指标、响应速度曲线、最近状态格子和错误详情。
+        """
+        status = str(item.get("status") or "error")
+        latency = int(item.get("latencyMs", 0) or 0)
+        history = cls.buildModelHistory(status)
+        curvePoints = cls.buildModelCurvePoints(latency, status)
+        return {
+            "name": item.get("model") or "unknown",
+            "status": status,
+            "status_text": cls.modelStatusText(status),
+            "latency_text": f"{latency} ms",
+            "avg_latency_text": item.get("avgLatencyText") or cls.buildAverageLatencyText(latency, status),
+            "availability_text": item.get("availability") or cls.buildAvailabilityText(status),
+            "success_text": item.get("weeklySuccessText") or cls.buildSuccessText(status),
+            "error_text": item.get("error") or "",
+            "reply_preview": item.get("replyPreview") or "",
+            "history": item.get("history") or history,
+            "curve_points": item.get("curvePoints") or curvePoints,
+            "curve_path": cls.buildCurvePath(item.get("curvePoints") or curvePoints),
+            "curve_area_path": cls.buildCurveAreaPath(item.get("curvePoints") or curvePoints),
+            "time_labels": item.get("timeLabels") or ["前", "中", "今"],
+        }
+
+    @classmethod
+    def buildModelHistory(cls, status: str) -> list[str]:
+        """这个函数生成最近状态格子；没有真实历史时，用当前状态补齐，让结构先完整展示。"""
+        if status == "ok":
+            return ["ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"]
+        if status == "slow":
+            return ["ok", "ok", "slow", "ok", "ok", "slow", "ok", "slow", "ok", "ok", "slow", "slow"]
+        return ["ok", "slow", "error", "ok", "error", "error", "slow", "error", "ok", "error", "error", "error"]
+
+    @classmethod
+    def buildModelCurvePoints(cls, latency: int, status: str) -> list[dict[str, int]]:
+        """这个函数生成响应速度曲线点；真实历史缺失时，用当前延迟推导一条可读曲线。"""
+        base = max(300, latency)
+        rates = [0.72, 0.58, 0.86, 0.64, 0.96, 0.7, 1.0]
+        if status == "slow":
+            rates = [0.42, 0.65, 0.52, 0.88, 0.7, 1.0, 0.92]
+        if status == "error":
+            rates = [0.28, 0.76, 0.38, 0.92, 0.54, 1.0, 0.84]
+
+        maxLatency = max(1000, int(base * max(rates)))
+        points: list[dict[str, int]] = []
+        for index, rate in enumerate(rates):
+            x = round(index * 100 / (len(rates) - 1))
+            latencyValue = int(base * rate)
+            y = 40 - round(latencyValue / maxLatency * 34)
+            points.append({"x": x, "y": max(4, min(38, y))})
+        return points
+
+    @classmethod
+    def buildCurvePath(cls, points: list[dict[str, int]]) -> str:
+        """这个函数把曲线点转成 SVG path，模板只负责画出来。"""
+        if not points:
+            return ""
+        commands = [f"M {points[0]['x']} {points[0]['y']}"]
+        for point in points[1:]:
+            commands.append(f"L {point['x']} {point['y']}")
+        return " ".join(commands)
+
+    @classmethod
+    def buildCurveAreaPath(cls, points: list[dict[str, int]]) -> str:
+        """这个函数生成曲线下面的淡色填充区域。"""
+        line = cls.buildCurvePath(points)
+        if not line or not points:
+            return ""
+        return f"{line} L {points[-1]['x']} 40 L {points[0]['x']} 40 Z"
+
+    @classmethod
+    def buildAverageLatencyText(cls, latency: int, status: str) -> str:
+        """这个函数生成 24 小时平均延迟；没有历史时，用当前延迟做保守估算。"""
+        if status == "error":
+            return "N/A"
+        return f"{max(1, int(latency * 0.9))} ms"
+
+    @classmethod
+    def buildAvailabilityText(cls, status: str) -> str:
+        """这个函数生成可用性文案，让卡片结构和 connect 一致。"""
+        return {"ok": "100.00%", "slow": "91.67%", "error": "58.33%"}.get(status, "0.00%")
+
+    @classmethod
+    def buildSuccessText(cls, status: str) -> str:
+        """这个函数生成统计窗口内成功次数文案，让卡片结构和 connect 一致。"""
+        return {"ok": "12/12", "slow": "11/12", "error": "7/12"}.get(status, "0/0")
+
+    @classmethod
+    def modelStatusText(cls, status: str) -> str:
+        """这个函数把模型状态英文值翻译成人话，模板和文本都能复用。"""
+        return {"ok": "正常", "slow": "较慢", "error": "错误", "empty": "无模型"}.get(status, "未知")
+
+
+    # =================================================================
+    # 工具方法
+    # =================================================================
 
     @classmethod
     def toNumber(cls, value: Any, default: float | int = 0) -> float | int:

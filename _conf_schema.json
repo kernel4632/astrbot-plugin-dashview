@@ -75,5 +75,72 @@
       "max": 30,
       "step": 1
     }
+  },
+  "model_timeout": {
+    "description": "模型探测超时秒数",
+    "type": "int",
+    "hint": "单个模型等待回复的最长时间，默认 30 秒",
+    "default": 30,
+    "slider": {
+      "min": 5,
+      "max": 120,
+      "step": 1
+    }
+  },
+  "model_concurrency": {
+    "description": "模型检测并发数",
+    "type": "int",
+    "hint": "同时探测几个模型，默认 3",
+    "default": 3,
+    "slider": {
+      "min": 1,
+      "max": 20,
+      "step": 1
+    }
+  },
+  "model_slow_ms": {
+    "description": "模型较慢判定阈值",
+    "type": "int",
+    "hint": "延迟超过这个毫秒数就算较慢，默认 8000",
+    "default": 8000,
+    "slider": {
+      "min": 500,
+      "max": 30000,
+      "step": 1000
+    }
+  },
+  "model_max_models": {
+    "description": "每个 Provider 最多检测几个模型",
+    "type": "int",
+    "hint": "限值可加快检测速度，0 表示不限制",
+    "default": 0,
+    "slider": {
+      "min": 0,
+      "max": 30,
+      "step": 1
+    }
+  },
+  "auto_dashboard_interval_hours": {
+    "description": "仪表盘定时推送间隔",
+    "type": "float",
+    "hint": "单位：小时。0 表示关闭定时推送；例如 6 表示每 6 小时推送一次。",
+    "default": 0,
+    "slider": {
+      "min": 0,
+      "max": 72,
+      "step": 0.5
+    }
+  },
+  "auto_dashboard_run_on_start": {
+    "description": "启动后立即推送一次",
+    "type": "bool",
+    "hint": "开启后插件启动时会立刻生成并推送一次仪表盘；需要已经记住过推送会话才会发送。",
+    "default": false
+  },
+  "auto_dashboard_remember_command_session": {
+    "description": "自动记住命令会话用于定时推送",
+    "type": "bool",
+    "hint": "开启后，在某个群聊或私聊执行过运行状态/模型检测命令，后续定时仪表盘会推送到该会话。",
+    "default": true
   }
 }
