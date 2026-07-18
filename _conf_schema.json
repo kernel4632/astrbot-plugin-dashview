@@ -1,74 +1,138 @@
 {
   "nickname": {
-    "description": "头像旁边显示的名称",
+    "description": "仪表盘显示名称",
+    "hint": "显示在监控面板左上角头像旁边；留空时使用“阿柯AKer”。",
     "type": "string",
-    "hint": "会显示在监控面板左上角头像旁边",
     "default": "阿柯AKer"
   },
+  "avatar_local_path": {
+    "description": "本地头像路径",
+    "hint": "可填写 AstrBot 所在机器上的图片文件路径。优先级高于头像 URL；留空则继续尝试头像 URL。",
+    "type": "string",
+    "default": ""
+  },
+  "avatar_url": {
+    "description": "远程头像 URL",
+    "hint": "填写可直接访问的图片地址。只有本地头像路径为空或读取失败时才会使用；QQ 平台留空可自动使用机器人 QQ 头像。",
+    "type": "string",
+    "default": ""
+  },
   "services": {
-    "description": "监控服务列表",
-    "type": "list",
-    "hint": "配置需要监控的服务，支持 HTTP 和 TCP 类型",
+    "description": "要监控的服务",
+    "hint": "每个服务单独添加一个 HTTP 或 TCP 插槽。列表为空时将使用插件内置的两个默认网站。",
+    "type": "template_list",
+    "templates": {
+      "http": {
+        "name": "HTTP / HTTPS 服务",
+        "hint": "检测网站、API 或其他支持 HTTP 请求的地址。状态码 200-399 会判定为正常，401、403、405 会显示为服务在线但受限。",
+        "display_item": "name",
+        "hide_hint_in_list": true,
+        "items": {
+          "name": {
+            "description": "服务名称",
+            "hint": "显示在仪表盘服务卡片上，例如“主核网站”。",
+            "type": "string",
+            "default": "新 HTTP 服务"
+          },
+          "type": {
+            "description": "服务类型",
+            "hint": "此插槽固定为 HTTP。不要修改，否则检测器无法按预期处理。",
+            "type": "string",
+            "options": [
+              "http"
+            ],
+            "default": "http"
+          },
+          "url": {
+            "description": "请求地址",
+            "hint": "填写完整的 http:// 或 https:// 地址，例如 https://example.com/health。",
+            "type": "string",
+            "default": "https://example.com/"
+          },
+          "method": {
+            "description": "请求方法",
+            "hint": "通常使用 GET；如果目标接口只允许 HEAD 或 POST，可按接口要求选择。",
+            "type": "string",
+            "options": [
+              "GET",
+              "HEAD",
+              "POST"
+            ],
+            "default": "GET"
+          },
+          "headers": {
+            "description": "自定义请求头",
+            "hint": "可选。用于填写 Authorization、Token 或目标服务要求的其他请求头，例如 {\"Authorization\": \"Bearer token\"}。",
+            "type": "dict",
+            "items": {},
+            "default": {}
+          }
+        }
+      },
+      "tcp": {
+        "name": "TCP 端口服务",
+        "hint": "检测服务器上的 TCP 端口是否可以建立连接，适合 Redis、数据库或自建服务。",
+        "display_item": "name",
+        "hide_hint_in_list": true,
+        "items": {
+          "name": {
+            "description": "服务名称",
+            "hint": "显示在仪表盘服务卡片上，例如“Redis 数据库”。",
+            "type": "string",
+            "default": "新 TCP 服务"
+          },
+          "type": {
+            "description": "服务类型",
+            "hint": "此插槽固定为 TCP。不要修改，否则检测器无法按预期处理。",
+            "type": "string",
+            "options": [
+              "tcp"
+            ],
+            "default": "tcp"
+          },
+          "host": {
+            "description": "服务器主机",
+            "hint": "填写域名或 IP 地址，例如 127.0.0.1、localhost 或 db.example.com。",
+            "type": "string",
+            "default": "127.0.0.1"
+          },
+          "port": {
+            "description": "服务器端口",
+            "hint": "填写 1 到 65535 之间的 TCP 端口号。",
+            "type": "int",
+            "default": 6379,
+            "slider": {
+              "min": 1,
+              "max": 65535,
+              "step": 1
+            }
+          }
+        }
+      }
+    },
     "default": [
       {
+        "__template_key": "http",
         "name": "超级主核API",
         "type": "http",
-        "url": "https://api.hujiarong.site/"
+        "url": "https://api.hujiarong.site/",
+        "method": "GET",
+        "headers": {}
       },
       {
+        "__template_key": "http",
         "name": "主核Kernyr网站",
         "type": "http",
-        "url": "https://www.hujiarong.site/"
+        "url": "https://www.hujiarong.site/",
+        "method": "GET",
+        "headers": {}
       }
-    ],
-    "items": {
-      "name": {
-        "description": "服务名称",
-        "type": "string",
-        "hint": "显示在监控面板上的服务名称"
-      },
-      "type": {
-        "description": "服务类型",
-        "type": "string",
-        "options": [
-          "http",
-          "tcp"
-        ],
-        "hint": "HTTP 或 TCP 服务"
-      },
-      "url": {
-        "description": "HTTP 服务地址",
-        "type": "string",
-        "hint": "仅 HTTP 类型需要填写"
-      },
-      "host": {
-        "description": "TCP 服务主机",
-        "type": "string",
-        "hint": "仅 TCP 类型需要填写"
-      },
-      "port": {
-        "description": "TCP 服务端口",
-        "type": "int",
-        "hint": "仅 TCP 类型需要填写"
-      }
-    }
-  },
-  "success_text": {
-    "description": "全部服务正常时显示的文字",
-    "type": "string",
-    "hint": "显示在监控面板右下角的状态结论区",
-    "default": "阿柯牛逼"
-  },
-  "fail_text": {
-    "description": "有服务异常时显示的文字",
-    "type": "string",
-    "hint": "显示在监控面板右下角的状态结论区",
-    "default": "阿柯死了"
+    ]
   },
   "timeout": {
-    "description": "服务检测超时时间",
+    "description": "服务检测超时时间（秒）",
+    "hint": "单个 HTTP 请求或 TCP 连接等待的最长时间。网络较慢时可以适当调大。",
     "type": "int",
-    "hint": "单位：秒",
     "default": 5,
     "slider": {
       "min": 1,
@@ -76,11 +140,23 @@
       "step": 1
     }
   },
+  "success_text": {
+    "description": "全部服务正常时的结论",
+    "hint": "所有服务检测成功时显示在仪表盘右下角，建议填写简短文字。",
+    "type": "string",
+    "default": "阿柯牛逼"
+  },
+  "fail_text": {
+    "description": "存在异常服务时的结论",
+    "hint": "任意服务检测失败时显示在仪表盘右下角，建议填写简短文字。",
+    "type": "string",
+    "default": "阿柯死了"
+  },
   "model_probe_interval_hours": {
-    "description": "模型定时探测间隔",
+    "description": "模型定时探测间隔（小时）",
+    "hint": "0 表示关闭后台定时探测；例如 1 表示每小时探测一次。后台探测只记录历史，不主动发送图片。",
     "type": "float",
-    "hint": "单位：小时。0 表示关闭后台定时探测；例如 1 表示每小时探测一次，只记录历史，不主动推送图片。",
-    "default": 0,
+    "default": 0.0,
     "slider": {
       "min": 0,
       "max": 72,
@@ -88,15 +164,15 @@
     }
   },
   "model_probe_run_on_start": {
-    "description": "启动后立即探测一次模型",
+    "description": "插件启动后立即探测模型",
+    "hint": "开启后插件启动时立刻探测一次并写入历史，不会主动推送图片。",
     "type": "bool",
-    "hint": "开启后插件启动时会立刻探测一次模型并写入历史，不会主动推送图片。",
     "default": false
   },
   "model_history_size": {
-    "description": "模型历史状态格子数量",
+    "description": "每个模型保留的历史次数",
+    "hint": "仪表盘中每个模型显示最近多少个状态格子。数值越大，能看到的历史越多。",
     "type": "int",
-    "hint": "仪表盘里每个模型显示最近多少次探测状态，默认 12 次。",
     "default": 12,
     "slider": {
       "min": 6,
@@ -105,9 +181,9 @@
     }
   },
   "model_stats_window_hours": {
-    "description": "模型统计窗口小时数",
+    "description": "模型统计时间窗口（小时）",
+    "hint": "平均延迟、可用性和成功次数只统计最近这段时间的探测记录。",
     "type": "int",
-    "hint": "用于计算平均延迟、可用性和成功次数的时间范围，默认 24 小时。",
     "default": 24,
     "slider": {
       "min": 1,
@@ -116,9 +192,9 @@
     }
   },
   "model_timeout": {
-    "description": "模型探测超时秒数",
+    "description": "模型探测超时时间（秒）",
+    "hint": "单个模型等待回复的最长时间。模型响应较慢时可以适当调大。",
     "type": "int",
-    "hint": "单个模型等待回复的最长时间，默认 30 秒",
     "default": 30,
     "slider": {
       "min": 5,
@@ -127,9 +203,9 @@
     }
   },
   "model_concurrency": {
-    "description": "模型检测并发数",
+    "description": "模型探测并发数",
+    "hint": "同时探测的模型数量。数值越大速度越快，但可能增加 Provider 或网络压力。",
     "type": "int",
-    "hint": "同时探测几个模型，默认 10",
     "default": 10,
     "slider": {
       "min": 1,
@@ -138,20 +214,20 @@
     }
   },
   "model_slow_ms": {
-    "description": "模型较慢判定阈值",
+    "description": "模型较慢判定阈值（毫秒）",
+    "hint": "响应延迟超过此数值时标记为“较慢”，但仍视为探测成功。",
     "type": "int",
-    "hint": "延迟超过这个毫秒数就算较慢，默认 8000",
     "default": 8000,
     "slider": {
       "min": 500,
       "max": 30000,
-      "step": 1000
+      "step": 500
     }
   },
   "model_max_models": {
-    "description": "每个 Provider 最多检测几个模型",
+    "description": "每个 Provider 的最大模型数",
+    "hint": "限制每个 Provider 参与探测的模型数量。0 表示不限制；设置上限可以减少探测耗时。",
     "type": "int",
-    "hint": "限值可加快检测速度，0 表示不限制",
     "default": 0,
     "slider": {
       "min": 0,
