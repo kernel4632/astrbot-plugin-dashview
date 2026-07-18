@@ -152,6 +152,28 @@
     "type": "string",
     "default": "阿柯死了"
   },
+  "resource_collect_interval_minutes": {
+    "description": "系统资源采集间隔（分钟）",
+    "hint": "后台每隔多少分钟记录一次 CPU、内存和磁盘真实占用率。默认 10 分钟；0 表示关闭后台采集，但查看仪表盘时仍会采样。",
+    "type": "float",
+    "default": 10.0,
+    "slider": {
+      "min": 0,
+      "max": 1440,
+      "step": 5
+    }
+  },
+  "resource_history_size": {
+    "description": "系统资源保留的历史次数",
+    "hint": "CPU、内存、磁盘趋势图保留最近多少次真实采样。每次查看仪表盘和每次后台模型定时探测都会追加一次。",
+    "type": "int",
+    "default": 24,
+    "slider": {
+      "min": 6,
+      "max": 96,
+      "step": 1
+    }
+  },
   "model_probe_interval_hours": {
     "description": "模型定时探测间隔（小时）",
     "hint": "0 表示关闭后台定时探测；例如 1 表示每小时探测一次。后台探测只记录历史，不主动发送图片。",

@@ -47,6 +47,7 @@ class Data:
         success_text: str = "阿柯牛逼",
         fail_text: str = "阿柯死了",
         model_report: dict[str, Any] | None = None,
+        resource_history: dict[str, list[dict[str, Any]]] | None = None,
     ) -> dict[str, Any]:
         """这个函数把页面需要的所有数据一次性整理好，返回给模板或插件入口直接使用。"""
         return {
@@ -54,7 +55,7 @@ class Data:
             "os_info": f"{computer.get('system', 'Unknown')} ({computer.get('machine', '')})",
             "summary": summary,
             "overview": cls.buildOverview(summary),
-            "resource_cards": cls.buildResourceCards(computer),
+            "resource_cards": cls.buildResourceCards(computer, resource_history),
             "services_status": cls.buildServices(services),
             "system_details": cls.buildSystemDetails(computer, summary, success_text, fail_text),
             "model_status": cls.buildModels(model_report),
@@ -78,48 +79,62 @@ class Data:
         return {"health_level": "danger", "health_text": "服务状态异常"}
 
     @classmethod
-    def buildResourceCards(cls, computer: dict[str, Any]) -> list[dict[str, Any]]:
-        """这个函数生成 CPU、内存、磁盘三张资源卡，颜色固定，方便用户一眼识别。"""
+    def buildResourceCards(cls, computer: dict[str, Any], history: dict[str, list[dict[str, Any]]] | None = None) -> list[dict[str, Any]]:
+        """生成三张资源卡，并把每项真实历史转换成固定 0-100% 纵轴的趋势曲线。"""
+        history = history or {}
         cpu = computer.get("cpu", {})
         memory = computer.get("memory", {})
         disk = computer.get("disk", {})
 
-        cpuPercent = float(cls.toNumber(cpu.get("percent"), 0))
-        memoryPercent = float(cls.toNumber(memory.get("percent"), 0))
-        diskPercent = float(cls.toNumber(disk.get("percent"), 0))
-
-        return [
-            {
-                "name": "CPU",
-                "icon": "CPU",
-                "percent_value": round(cpuPercent, 1),
-                "percent_text": cls.formatPercent(cpuPercent),
-                "value": cls.formatPercent(cpuPercent),
-                "detail": "当前处理器占用",
-                "color": "cyan",
-                "wave": "cyan",
-            },
-            {
-                "name": "内存",
-                "icon": "RAM",
-                "percent_value": round(memoryPercent, 1),
-                "percent_text": cls.formatPercent(memoryPercent),
-                "value": cls.formatPercent(memoryPercent),
-                "detail": f"{Render.autoConvertUnit(cls.toNumber(memory.get('used'), 0))} / {Render.autoConvertUnit(cls.toNumber(memory.get('total'), 0))}",
-                "color": "mint",
-                "wave": "mint",
-            },
-            {
-                "name": "磁盘",
-                "icon": "SSD",
-                "percent_value": round(diskPercent, 1),
-                "percent_text": cls.formatPercent(diskPercent),
-                "value": cls.formatPercent(diskPercent),
-                "detail": f"{Render.autoConvertUnit(cls.toNumber(disk.get('used'), 0))} / {Render.autoConvertUnit(cls.toNumber(disk.get('total'), 0))}",
-                "color": "purple",
-                "wave": "purple",
-            },
+        cards = [
+            cls.buildResourceCard("cpu", "CPU", "当前处理器占用", "cyan", cpu, history),
+            cls.buildResourceCard("memory", "内存", cls.buildUsageText(memory), "mint", memory, history),
+            cls.buildResourceCard("disk", "磁盘", cls.buildUsageText(disk), "purple", disk, history),
         ]
+        return cards
+
+    @classmethod
+    def buildResourceCard(cls, key: str, name: str, detail: str, color: str, resource: dict[str, Any], history: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+        """整理单张资源卡；曲线、平均值和时间标签全部来自已保存的真实采样。"""
+        percent = float(cls.toNumber(resource.get("percent"), 0))
+        records = history.get(key, []) if isinstance(history.get(key, []), list) else []
+        points = cls.buildResourceCurvePoints(records)
+        values = [float(record["percent"]) for record in records if isinstance(record, dict) and record.get("percent") is not None]
+        averageText = cls.formatPercent(sum(values) / len(values)) if values else "暂无历史"
+
+        return {
+            "name": name,
+            "value": cls.formatPercent(percent),
+            "detail": detail,
+            "color": color,
+            "curve_path": cls.buildCurvePath(points),
+            "curve_area_path": cls.buildCurveAreaPath(points),
+            "time_labels": cls.buildResourceTimeLabels(records),
+            "sample_text": f"{len(values)} 次采样 · 平均 {averageText}",
+        }
+
+    @classmethod
+    def buildUsageText(cls, resource: dict[str, Any]) -> str:
+        """把内存或磁盘的已用量与总量整理成人能直接阅读的文本。"""
+        used = Render.autoConvertUnit(cls.toNumber(resource.get("used"), 0))
+        total = Render.autoConvertUnit(cls.toNumber(resource.get("total"), 0))
+        return f"{used} / {total}"
+
+    @classmethod
+    def buildResourceCurvePoints(cls, records: list[dict[str, Any]]) -> list[dict[str, int]]:
+        """把真实百分比映射到 SVG 坐标；100% 在顶部，0% 在底部，不放大微小波动。"""
+        values = [max(0.0, min(100.0, float(record["percent"]))) for record in records if isinstance(record, dict) and record.get("percent") is not None]
+        if len(values) < 2:
+            return []  # 单个真实值只能表示当前状态，至少两次真实采样才能称为趋势。
+        return [{"x": round(index * 100 / (len(values) - 1)), "y": 38 - round(value / 100 * 34)} for index, value in enumerate(values)]
+
+    @classmethod
+    def buildResourceTimeLabels(cls, records: list[dict[str, Any]]) -> list[str]:
+        """曲线只展示最早、中间、最新三个真实采样时间；数据不足时用占位文本。"""
+        if not records:
+            return ["暂无", "历史", "数据"]
+        picked = [records[0], records[len(records) // 2], records[-1]]
+        return [str(record.get("checkedAt", ""))[11:16] or "--:--" for record in picked]
 
     @classmethod
     def buildServices(cls, services: list[dict[str, Any]]) -> list[dict[str, Any]]:

@@ -15,6 +15,22 @@
 {% endmacro %}
 
 {% macro overview(d) %}
+<svg width="0" height="0" class="resource-gradient-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="resource-gradient-cyan" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#9fdcff" stop-opacity="0.52" />
+      <stop offset="100%" stop-color="#9fdcff" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="resource-gradient-mint" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#9be7c4" stop-opacity="0.52" />
+      <stop offset="100%" stop-color="#9be7c4" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="resource-gradient-purple" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ceb8ff" stop-opacity="0.52" />
+      <stop offset="100%" stop-color="#ceb8ff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+</svg>
 <div class="panel-card overview-panel">
   <div class="section-head">
     <div>
@@ -31,7 +47,20 @@
       </div>
       <div class="meter-value">{{ item.value }}</div>
       <div class="meter-detail">{{ item.detail }}</div>
-      <div class="meter-wave meter-wave-{{ item.wave }} meter-wave-{{ loop.index }}"></div>
+      <div class="meter-sample">{{ item.sample_text }}</div>
+      <div class="meter-wave">
+        {% if item.curve_path %}
+        <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none">
+          <path d="{{ item.curve_area_path }}" class="meter-curve-area meter-curve-{{ item.color }}"></path>
+          <path d="{{ item.curve_path }}" class="meter-curve-line meter-curve-{{ item.color }}"></path>
+        </svg>
+        <div class="meter-time-axis">
+          {% for label in item.time_labels %}<span>{{ label }}</span>{% endfor %}
+        </div>
+        {% else %}
+        <div class="meter-empty">首次采样，等待趋势数据</div>
+        {% endif %}
+      </div>
     </div>
     {% endfor %}
   </div>

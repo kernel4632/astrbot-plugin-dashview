@@ -42,6 +42,7 @@ MODELTEST_ALIASES: Final[set[str]] = {"modelTest", "模型检测", "模型连通
 ROOT: Final[Path] = Path(__file__).parent
 CACHE_FOLDER: Final[Path] = ROOT / "cache"
 MODEL_HISTORY_KEY: Final[str] = "model_probe_history"
+RESOURCE_HISTORY_KEY: Final[str] = "resource_history"
 LATEST_MODEL_REPORT_KEY: Final[str] = "latest_model_probe_report"
 
 
@@ -65,12 +66,15 @@ class DashViewPlugin(Star):
         super().__init__(context)
         self.config = config if config is not None else {}
         self.autoModelProbeTask: asyncio.Task | None = None
+        self.autoResourceCollectTask: asyncio.Task | None = None
         self.modelProbeLock = asyncio.Lock()
+        self.resourceHistoryLock = asyncio.Lock()
 
     async def initialize(self):
-        """这个函数在插件加载时运行，读取配置后启动定时模型探测任务。"""
+        """插件加载时分别启动模型探测和系统资源采集，两类定时任务互不依赖。"""
         logger.info("开始初始化 DashView 插件")
         self.startAutoModelProbeTask()
+        self.startAutoResourceCollectTask()
         logger.info("DashView 插件初始化完成")
 
 
@@ -130,6 +134,7 @@ class DashViewPlugin(Star):
         servicesToCheck = self.readServices(config)
         timeout = self.readInt(config, "timeout", 5)
         result = Monitor.collect(services=servicesToCheck, timeout=timeout)
+        resourceHistory = await self.saveResourceHistory(result["computer"], config)
 
         logger.info("开始检测模型连通性并合并历史")
         modelReport = await self.runModelProbeWithHistory(config)
@@ -145,6 +150,7 @@ class DashViewPlugin(Star):
             success_text=self.readText(config, "success_text", "阿柯牛逼"),
             fail_text=self.readText(config, "fail_text", "阿柯死了"),
             model_report=modelReport,
+            resource_history=resourceHistory,
         )
 
         logger.info("开始生成单文件 HTML")
@@ -204,6 +210,44 @@ class DashViewPlugin(Star):
         except Exception as error:
             logger.warning(f"模型定时探测失败: {error}")
 
+    def startAutoResourceCollectTask(self) -> None:
+        """插件启动时创建独立资源采集任务；间隔为 0 时只在用户查看仪表盘时采样。"""
+        intervalMinutes = self.resourceCollectIntervalMinutes()
+        if intervalMinutes <= 0:
+            logger.info("系统资源定时采集未开启")
+            return
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            logger.warning("系统资源定时采集启动失败：当前没有运行中的事件循环")
+            return
+
+        self.autoResourceCollectTask = loop.create_task(self.autoResourceCollectLoop())
+        logger.info(f"系统资源定时采集已开启，间隔 {intervalMinutes:g} 分钟")
+
+    async def autoResourceCollectLoop(self) -> None:
+        """启动后立即记录一次资源状态，之后按分钟间隔持续保存，不检测服务或模型。"""
+        await self.runAutoResourceCollectOnce()
+        while True:
+            intervalMinutes = self.resourceCollectIntervalMinutes()
+            if intervalMinutes <= 0:
+                logger.info("系统资源定时采集已停止：间隔配置小于等于 0")
+                return
+            await asyncio.sleep(max(60.0, intervalMinutes * 60))
+            await self.runAutoResourceCollectOnce()
+
+    async def runAutoResourceCollectOnce(self) -> None:
+        """采集一次本机 CPU、内存、磁盘并追加历史，失败只记日志，不影响插件命令。"""
+        try:
+            computer = Monitor.collect(services=[], timeout=1)["computer"]
+            await self.saveResourceHistory(computer, self.config)
+            logger.info("系统资源定时采集完成")
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            logger.warning(f"系统资源定时采集失败: {error}")
+
     async def runModelProbeWithHistory(self, config: dict[str, Any]) -> dict[str, Any]:
         """
         这个函数执行一次模型探测，追加历史，再把历史指标补回报告。
@@ -261,6 +305,31 @@ class DashViewPlugin(Star):
             await self.put_kv_data(MODEL_HISTORY_KEY, history)
         except Exception as error:
             logger.warning(f"保存模型探测历史失败: {error}")
+
+    async def saveResourceHistory(self, computer: dict[str, Any], config: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+        """读取资源历史，追加本次真实采样，裁剪旧记录后保存并返回页面需要的历史。"""
+        async with self.resourceHistoryLock:
+            try:
+                history = await self.get_kv_data(RESOURCE_HISTORY_KEY, {})
+                history = history if isinstance(history, dict) else {}
+                historySize = max(2, self.readInt(config, "resource_history_size", 24))
+                checkedAt = datetime.now().isoformat(timespec="seconds")
+
+                for resourceName in ("cpu", "memory", "disk"):
+                    resource = computer.get(resourceName, {})
+                    percent = resource.get("percent")
+                    if percent is None:
+                        continue
+                    records = history.get(resourceName, [])
+                    records = records if isinstance(records, list) else []
+                    records.append({"percent": round(float(percent), 1), "checkedAt": checkedAt})
+                    history[resourceName] = records[-historySize:]
+
+                await self.put_kv_data(RESOURCE_HISTORY_KEY, history)
+                return history
+            except Exception as error:
+                logger.warning(f"保存系统资源历史失败: {error}")
+                return {}
 
     def modelHistoryKey(self, provider: dict[str, Any], item: dict[str, Any]) -> str:
         """这个函数生成稳定的模型历史键，按 Provider 分组和模型名区分。"""
@@ -334,6 +403,10 @@ class DashViewPlugin(Star):
     def modelProbeIntervalHours(self) -> float:
         """这个函数读取模型定时探测间隔，单位是小时，0 表示关闭。"""
         return self.readFloat(self.config, "model_probe_interval_hours", 0.0)
+
+    def resourceCollectIntervalMinutes(self) -> float:
+        """读取资源采集间隔，默认每 10 分钟采一次，0 表示关闭后台采集。"""
+        return self.readFloat(self.config, "resource_collect_interval_minutes", 10.0)
 
 
     # =================================================================
@@ -428,11 +501,15 @@ class DashViewPlugin(Star):
             return None
 
     async def terminate(self):
-        """这个函数在插件卸载时运行，会取消模型定时探测任务，避免卸载后后台还在循环。"""
-        if self.autoModelProbeTask and not self.autoModelProbeTask.done():
-            self.autoModelProbeTask.cancel()
-            try:
-                await self.autoModelProbeTask
-            except asyncio.CancelledError:
-                pass
+        """插件卸载时取消模型与资源两个后台任务，避免卸载后继续采集。"""
+        tasks = [self.autoModelProbeTask, self.autoResourceCollectTask]
+        for task in tasks:
+            if task and not task.done():
+                task.cancel()
+        for task in tasks:
+            if task:
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
         logger.info("DashView 插件已卸载")
