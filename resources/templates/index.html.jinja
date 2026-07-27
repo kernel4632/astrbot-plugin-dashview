@@ -1,33 +1,21 @@
 {% from 'macros.html.jinja' import header, overview, services_monitor, model_connectivity %}
-
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/default/res/css/index.css" />
-  {% for css in config.ps_default_additional_css -%}
-  <link rel="stylesheet" href="{{ css }}" />{% endfor %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=900, initial-scale=1">
+  <style>{{ css | safe }}</style>
 </head>
-
 <body>
   <div class="main-background">
     <div class="main-background-mask">
-      <div class="dashboard-shell">
-        {{ header(d) }}
+      <main class="dashboard-shell">
+        {{ header(d, avatar_base64, avatar_mime) }}
         {{ overview(d) }}
         {{ services_monitor(d) }}
         {{ model_connectivity(d) }}
-      </div>
+      </main>
     </div>
   </div>
 </body>
-
-<script src="/js/init-global.js"></script>
-<script src="/js/lazy-load.js"></script>
-{% for script in config.ps_default_additional_script -%}
-<script src="{{ script }}"></script>{% endfor %}
-<script src="/js/load-plugin.js"></script>
-
 </html>

@@ -1,15 +1,22 @@
 [project]
 name = "astrbot-plugin-dashview"
-version = "1.0.0"
-description = "AstrBot 的运行状态仪表盘插件，使用单文件 HTML 生成精致监控面板。"
+version = "2.0.0"
+description = "AstrBot 主机资源、服务健康与模型路由连通性状态面板。"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.24",
     "jinja2>=3.1",
-    "markupsafe>=2.1",
-    "pillow>=10.0",
     "playwright>=1.40",
     "psutil>=5.9",
-    "py-cpuinfo>=9.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

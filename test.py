@@ -1,233 +1,147 @@
 """
-这个文件是本地测试入口，用来模拟插件真正运行时的数据流。
+DashView 本地预览：使用确定的完整状态样本生成 output_test.html 和 output_test.jpg。
 
-它只做四件事：
-1. 调用 Monitor.collect() 采集本机真实状态和服务状态
-2. 构造一份假的模型连通性检测结果，专门用来预览底部模型卡片
-3. 调用 Data.buildCollected() 整理模板数据，再调用 Render.build() 生成单文件 HTML
-4. 把 HTML 渲染成 output_test.jpg，让你直接打开图片确认最终效果
-
-为什么模型检测这里用假数据：
-本地运行 test.py 时通常没有 AstrBot 的 context，也拿不到 WebUI 里的 Provider。
-所以这个文件不做真实模型请求，只模拟三种不同长度的随机大幅波动历史数据。
-真实插件运行时，main.py 会定时调用 ModelProbe.probe() 写入历史，用户查看仪表盘时会看到同样结构的数据。
-
-最常见的用法只有一个：
-python test.py
-
-运行后会生成两个文件：
-output_test.html  可以用浏览器打开看页面结构
-output_test.jpg   可以直接查看机器人最终会发送的图片效果
+它不访问外部服务、不调用真实模型、不写 AstrBot KV；用于快速检查模板布局和 Chromium 截图。
+调用示例：uv run python test.py
 """
 
-from __future__ import annotations
+from __future__ import annotations                         # 允许现代类型注解
 
-import asyncio
-import random
-from pathlib import Path
-from time import time
-from typing import Any
-
-from data import Data
-from utils.image import Image
-from utils.monitor import Monitor
-from utils.render import Render
+import asyncio                                             # 运行异步浏览器截图
+import sys                                                 # 注册本地预览包名
+from pathlib import Path                                   # 定位仓库与输出文件
+from types import ModuleType                               # 避免导入需要 AstrBot 的 main.py
 
 
-ROOT = Path(__file__).parent
-RESOURCES = ROOT / "resources"
-OUTPUT_HTML = ROOT / "output_test.html"
-OUTPUT_IMAGE = ROOT / "output_test.jpg"
-AVATAR = RESOURCES / "avatar.jpg"
-SERVICES = [
-    {"name": "超级主核API", "type": "http", "url": "https://api.hujiarong.site/"},
-    {"name": "主核Kernyr网站", "type": "http", "url": "https://www.hujiarong.site/"},
-]
+ROOT = Path(__file__).parent                               # 仓库根目录包含所有被预览模块
+package = ModuleType("dashview")                           # 连字符目录不能直接作为 Python 包导入
+package.__path__ = [str(ROOT)]                              # 相对导入从当前仓库解析
+sys.modules.setdefault("dashview", package)               # 注册预览专用包身份
+
+from dashview.config import Settings                       # 使用正式配置数据类
+from dashview.presentation.html import render_html          # 使用正式离线 HTML 渲染器
+from dashview.presentation.image import close_browser, render_image # 使用正式 Chromium 生命周期
+from dashview.presentation.view import build_dashboard_view # 使用正式可信视图转换
 
 
-def readAvatar() -> bytes | None:
-    """这个函数读取本地测试头像，没有头像时直接返回 None。"""
-    if not AVATAR.exists():
-        return None
-
-    avatarBytes = AVATAR.read_bytes()
-    print(f"加载头像: {AVATAR}")
-    return avatarBytes
+OUTPUT_HTML = ROOT / "output_test.html"                    # 浏览器可直接检查的单文件页面
+OUTPUT_IMAGE = ROOT / "output_test.jpg"                    # AstrBot 最终发送效果的 JPEG
 
 
-def randomHistory(count: int, baseStatus: str) -> list[str]:
-    """
-    这个函数随机生成指定数量的历史状态格子。
-    baseStatus 是主状态，随机混入少量其他状态。
-    """
-    statuses: list[str] = []
-    for _ in range(count):
-        roll = random.random()
-        if baseStatus == "ok" and roll < 0.15:
-            statuses.append("slow")
-        elif baseStatus == "slow" and roll < 0.3:
-            statuses.append(random.choice(["ok", "error"]))
-        elif baseStatus == "error" and roll < 0.25:
-            statuses.append("slow")
-        else:
-            statuses.append(baseStatus)
-    return statuses
-
-
-def randomCurvePoints(count: int, baseLatency: int) -> list[dict[str, int]]:
-    """
-    这个函数生成大幅波动的随机曲线点。
-    每个点的延迟在基准值的 0.4 到 1.6 倍之间大幅波动。
-    曲线坐标映射到 0-100 宽 / 0-40 高的 SVG 坐标。
-    """
-    maxLatency = max(1000, int(baseLatency * 1.8))
-    points: list[dict[str, int]] = []
-    for index in range(count):
-        x = round(index * 100 / (count - 1)) if count > 1 else 0
-        # 大幅随机波动：基准值的 0.4 到 1.6 倍
-        jitter = random.uniform(0.4, 1.6)
-        latencyValue = int(baseLatency * jitter)
-        y = 40 - round(latencyValue / maxLatency * 34)
-        points.append({"x": x, "y": max(4, min(38, y))})
-    return points
-
-
-def randomTimeLabels(count: int) -> list[str]:
-    """这个函数生成时间轴标签，这里用假数字表示探测序号。"""
-    if count <= 2:
-        return [f"#{i+1}" for i in range(count)]
-    return [f"#{1}", f"#{count // 2 + 1}", f"#{count}"]
-
-
-def buildFakeModelReport() -> dict[str, Any]:
-    """
-    这个函数构造一份和 ModelProbe.probe() 加历史合并之后同形状的假数据。
-
-    三个模型分别用不同数量的历史格子（4、6、5），
-    每个模型的延迟都大幅随机波动，曲线点数量等于格子数量。
-    这样你能同时看到三种长度状态格子的展示效果。
-    """
-    startedAt = time()
-    random.seed(42)
-
-    # 三个模型分别定义基础参数
-    modelDefs = [
-        {"model": "gpt-4o-mini", "status": "ok", "baseLatency": 1200, "historyCount": 4},
-        {"model": "gpt-4o", "status": "slow", "baseLatency": 5200, "historyCount": 6},
-        {"model": "o3-mini", "status": "error", "baseLatency": 15000, "historyCount": 5},
-    ]
-
-    results: list[dict[str, Any]] = []
-    for definition in modelDefs:
-        history = randomHistory(definition["historyCount"], definition["status"])
-        curvePoints = randomCurvePoints(definition["historyCount"], definition["baseLatency"])
-        latencies = [int(point["y"] * definition["baseLatency"] / 34) for point in curvePoints]
-        avgLatency = sum(latencies) // len(latencies) if latencies else definition["baseLatency"]
-        okCount = sum(1 for s in history if s == "ok")
-        errorCount = sum(1 for s in history if s == "error")
-
-        results.append({
-            "model": definition["model"],
-            "status": definition["status"],
-            "latencyMs": latencies[-1],
-            "replyPreview": "OK" if definition["status"] != "error" else "",
-            "avgLatencyText": f"{avgLatency} ms",
-            "availability": f"{okCount / len(history) * 100:.2f}%",
-            "weeklySuccessText": f"{okCount}/{len(history)}",
-            "history": history,
-            "curvePoints": curvePoints,
-            "timeLabels": randomTimeLabels(definition["historyCount"]),
-            "error": "TimeoutError: 连接超时" if definition["status"] == "error" else "",
-        })
-
-    okCount = sum(1 for r in results if r["status"] == "ok")
-    slowCount = sum(1 for r in results if r["status"] == "slow")
-    errorCount = sum(1 for r in results if r["status"] == "error")
-
-    # Provider 分组状态取决于是否包含错误模型
-    groupStatus = "error" if errorCount > 0 else ("slow" if slowCount > 0 else "ok")
-    groupLabel = {"ok": "正常", "slow": "较慢", "error": "异常"}[groupStatus]
-
-    providers = [
-        {
-            "groupId": "openai-main",
-            "displayName": "OpenAI 主线路",
-            "modelCount": len(results),
-            "okCount": okCount,
-            "slowCount": slowCount,
-            "errorCount": errorCount,
-            "status": groupStatus,
-            "statusLabel": groupLabel,
-            "results": results,
-        },
-    ]
-
+# --- 构造覆盖健康、降级和异常的主机事实 ---
+def build_computer() -> dict:
+    observed_at = 1_785_088_800_000                         # 固定时间确保每次输出内容一致
     return {
-        "title": "模型连通性",
-        "checkedAt": "2026-05-03 20:00:00",
-        "elapsedMs": int((time() - startedAt) * 1000) + 1250,
-        "total": len(results),
-        "okCount": okCount,
-        "slowCount": slowCount,
-        "errorCount": errorCount,
-        "providerCount": len(providers),
-        "providers": providers,
-        "allOk": errorCount == 0,
+        "observed_at": observed_at,
+        "hostname": "astrbot-node-01",
+        "system": "Linux",
+        "system_version": "6.8.0",
+        "architecture": "x86_64",
+        "boot_at": observed_at - 9 * 86400 * 1000 - 5 * 3600 * 1000,
+        "process_count": 86,
+        "cpu": {"percent": 36.4, "logical_count": 16},
+        "memory": {"percent": 68.2, "used": 23_430_000_000, "total": 34_360_000_000},
+        "swap": {"percent": 12.5, "used": 1_070_000_000, "total": 8_590_000_000},
+        "disk": {"percent": 83.7, "used": 431_640_000_000, "total": 515_400_000_000, "path": "/"},
+        "network": {"sent": 918_000_000_000, "received": 2_340_000_000_000, "sent_per_second": 821_000, "received_per_second": 4_280_000},
     }
 
 
-def printResult(computer: dict[str, Any], services: list[dict[str, Any]], summary: dict[str, Any], modelReport: dict[str, Any]) -> None:
-    """这个函数把本次采集和模拟模型结果打印出来，方便你一边看图片一边看底层数据。"""
-    print("\n=== 采集的真实数据 ===")
-    print(f"主机名: {computer.get('hostName')}")
-    print(f"系统: {computer.get('system')} {computer.get('systemVersion')} {computer.get('machine')}")
-    print(f"Python版本: {computer.get('pythonVersion')}")
-    print(f"开机时间: {computer.get('bootTime')}")
-    print(f"CPU信息: {computer.get('cpu')}")
-    print(f"内存信息: {computer.get('memory')}")
-    print(f"磁盘信息: {computer.get('disk')}")
-    print(f"服务摘要: {summary}")
-
-    for service in services:
-        print(f"服务 {service.get('name')}: ok={service.get('ok')} statusCode={service.get('statusCode')} target={service.get('target')} message={service.get('message')}")
-
-    print("\n=== 模拟的模型连通性数据 ===")
-    print(f"Provider 数: {modelReport.get('providerCount')}，模型数: {modelReport.get('total')}，正常: {modelReport.get('okCount')}，较慢: {modelReport.get('slowCount')}，错误: {modelReport.get('errorCount')}")
-    for provider in modelReport.get("providers", []):
-        print(f"Provider {provider.get('displayName')}: {provider.get('statusLabel')}，模型数 {provider.get('modelCount')}")
-        for item in provider.get("results", []):
-            print(f"  {item.get('model')}: {item.get('status')} 延迟 {item.get('latencyMs')}ms 格子数 {len(item.get('history', []))}")
+# --- 构造四项真实资源历史 ---
+def build_resource_history(computer: dict) -> dict:
+    values = {
+        "cpu": [24, 31, 52, 41, 28, 36.4],
+        "memory": [60, 62, 64, 65, 67, 68.2],
+        "swap": [8, 8, 9, 10, 11, 12.5],
+        "disk": [80.1, 80.8, 81.6, 82.4, 83.0, 83.7],
+    }
+    return {
+        resource_id: [
+            {"observed_at": computer["observed_at"] - (len(series) - index) * 600_000, "percent": percent}
+            for index, percent in enumerate(series)
+        ]
+        for resource_id, series in values.items()
+    }
 
 
+# --- 构造服务检测事实 ---
+def build_services(computer: dict) -> list[dict]:
+    base = {"observed_at": computer["observed_at"], "status_code": None}
+    return [
+        {**base, "id": "webui", "name": "AstrBot WebUI", "type": "http", "target": "http://127.0.0.1:6185", "state": "healthy", "duration_ms": 18, "status_code": 200, "reason": "服务响应正常"},
+        {**base, "id": "openai", "name": "OpenAI API", "type": "http", "target": "https://api.openai.com/v1/models", "state": "restricted", "duration_ms": 124, "status_code": 401, "reason": "服务可达，但探测请求受限"},
+        {**base, "id": "onebot", "name": "OneBot 接口", "type": "tcp", "target": "127.0.0.1:3001", "state": "healthy", "duration_ms": 3, "reason": "端口连接正常"},
+        {**base, "id": "anthropic", "name": "Anthropic API", "type": "http", "target": "https://api.anthropic.com", "state": "down", "duration_ms": 5001, "reason": "连接超时"},
+    ]
+
+
+# --- 构造 AstrBot API Provider 报告和对应真实历史 ---
+def build_models(computer: dict) -> tuple[dict, dict]:
+    observed_at = computer["observed_at"]                   # 所有路由属于同一探测批次
+    route_definitions = [
+        ("openai::gpt-4o", "openai", "OpenAI API", "gpt-4o", "available", 1240, "响应正确"),
+        ("anthropic::claude", "anthropic", "Anthropic API", "claude-sonnet-4", "slow", 9360, "响应较慢"),
+        ("gemini::flash", "gemini", "Google Gemini API", "gemini-2.5-flash", "available", 680, "响应正确"),
+        ("deepseek::chat", "deepseek", "DeepSeek API", "deepseek-chat", "unavailable", 30001, "超过 30 秒未响应"),
+    ]
+    routes = [{
+        "route_id": route_id,
+        "provider_id": provider_id,
+        "provider_name": provider_name,
+        "model_name": model_name,
+        "state": state,
+        "latency_ms": latency,
+        "observed_at": observed_at,
+        "reason": reason,
+    } for route_id, provider_id, provider_name, model_name, state, latency, reason in route_definitions]
+
+    history = {}
+    for route in routes:
+        states = ["available"] * 24                        # 完整覆盖 24 小时，每小时一个真实语义点
+        if route["state"] == "slow":
+            states[7], states[15], states[-1] = "slow", "slow", "slow"
+        elif route["state"] == "unavailable":
+            states[9], states[18], states[-1] = "unavailable", "slow", "unavailable"
+        history[route["route_id"]] = [{
+            "observed_at": observed_at - (len(states) - 1 - index) * 3_600_000,
+            "state": state,
+            "latency_ms": route["latency_ms"] if state == route["state"] else 9_200 if state == "slow" else max(300, min(1800, route["latency_ms"] // 2)),
+        } for index, state in enumerate(states)]
+
+    report = {
+        "observed_at": observed_at,
+        "duration_ms": 30_120,
+        "route_count": len(routes),
+        "available_count": 2,
+        "slow_count": 1,
+        "invalid_count": 0,
+        "unavailable_count": 1,
+        "state": "critical",
+        "routes": routes,
+    }
+    return report, history
+
+
+# --- 生成 HTML 和最终图片 ---
 async def main() -> None:
-    """这个函数完整执行一次本地测试流程，并同时生成 HTML 和由 HTML 渲染出来的图片。"""
-    print("正在采集真实系统信息...")
-    result = Monitor.collect(services=SERVICES, timeout=5)
-    computer = result["computer"]
-    services = result["services"]
-    summary = result["summary"]
-
-    print("正在构造模型连通性预览数据...")
-    modelReport = buildFakeModelReport()
-    avatarBytes = readAvatar()
-
-    collected = Data.buildCollected(
+    computer = build_computer()                             # 载入固定主机事实
+    report, model_history = build_models(computer)          # 载入固定模型事实与历史
+    view = build_dashboard_view(
         computer=computer,
-        services=services,
-        summary=summary,
-        nickname="阿柯AKer",
-        success_text="阿柯牛逼",
-        fail_text="阿柯死了",
-        model_report=modelReport,
+        resource_history=build_resource_history(computer),  # 固定趋势确保截图可比较
+        services=build_services(computer),                  # 同时覆盖三种服务状态
+        model_report=report,                                # 同时覆盖正常、慢速和失败模型
+        model_history=model_history,
+        settings=Settings(),                                # 使用插件正式默认阈值和文案
+        now_ms=computer["observed_at"],                     # 固定时钟保证预览新鲜度完全确定
     )
-    html = Render.build(collected=collected, avatarBytes=avatarBytes)
-    OUTPUT_HTML.write_text(html, encoding="utf-8")
-    await Image.save(html=html, outputPath=OUTPUT_IMAGE, width=900, quality=95)
-
-    print(f"\nHTML文件已生成: {OUTPUT_HTML}")
-    print(f"HTML渲染图片已生成: {OUTPUT_IMAGE}")
-    printResult(computer=computer, services=services, summary=summary, modelReport=modelReport)
+    html = render_html(view, avatar_bytes=None)             # 默认头像也必须能够离线渲染
+    OUTPUT_HTML.write_text(html, encoding="utf-8")         # 输出单文件供浏览器检查结构
+    OUTPUT_IMAGE.write_bytes(await render_image(html))      # 输出与机器人发送一致的 JPEG
+    await close_browser()                                   # 本地脚本结束前主动释放 Chromium
+    print(f"HTML: {OUTPUT_HTML}")                           # 告知用户两个实际输出路径
+    print(f"Image: {OUTPUT_IMAGE}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main())                                     # 从同步命令行进入异步截图流程
