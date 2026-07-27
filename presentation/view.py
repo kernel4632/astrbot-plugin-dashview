@@ -84,7 +84,7 @@ def _build_resources(computer: dict[str, Any], history: dict[str, list[dict[str,
         )
         values = [float(sample["percent"]) for sample in samples]
         state = _threshold_state(percent, warning, critical)
-        resources.append({
+        resource_view = {
             "id": resource_id,                            # CSS 和问题列表使用稳定资源标识
             "label": label,                               # 面向用户的中文名称
             "state": state,                               # healthy/degraded/critical/unknown
@@ -96,7 +96,22 @@ def _build_resources(computer: dict[str, Any], history: dict[str, list[dict[str,
             "points": _resource_curve_points(samples),    # 横轴保留暂停和间隔变化
             "warning_y": _resource_threshold_y(warning),  # 阈值线与 WebUI 有效配置一致
             "critical_y": _resource_threshold_y(critical),
-        })
+        }
+        resource_view["curve_path"] = _smooth_curve_path(resource_view["points"]) if resource_view["points"] else ""
+        if resource_id == "disk":                         # 磁盘卡用 I/O 波动替代缓慢变化的容量曲线
+            read_rate = current.get("read_per_second")
+            write_rate = current.get("write_per_second")
+            resource_view.update({
+                "current": f"↓ {_bytes_text(read_rate, '/s')}",
+                "secondary": f"↑ {_bytes_text(write_rate, '/s')}",
+                "detail": f"容量占用 {_percent_text(percent)}",
+                "points": "",
+                "read_points": _disk_rate_curve_points(samples, "read_per_second"),
+                "write_points": _disk_rate_curve_points(samples, "write_per_second"),
+            })
+            resource_view["read_curve_path"] = _smooth_curve_path(resource_view["read_points"]) if resource_view["read_points"] else ""
+            resource_view["write_curve_path"] = _smooth_curve_path(resource_view["write_points"]) if resource_view["write_points"] else ""
+        resources.append(resource_view)
     resources[0]["detail"] = f"{computer.get('cpu', {}).get('logical_count') or '?'} 线程"
     return resources
 
@@ -440,6 +455,20 @@ def _resource_curve_points(samples: list[dict[str, Any]]) -> str:
         y = 38 - max(0, min(100, float(sample["percent"]))) * 0.34
         points.append(f"{round(x, 2)},{round(y, 2)}")
     return " ".join(points)
+
+
+# --- 把磁盘读写速率映射到共享的自适应纵轴 ---
+def _disk_rate_curve_points(samples: list[dict[str, Any]], field: str) -> str:
+    valid = [sample for sample in samples if sample.get("read_per_second") is not None and sample.get("write_per_second") is not None]
+    if len(valid) < 2:
+        return ""                                          # 至少两个速率样本才能表达波动
+    start = int(valid[0]["observed_at"])
+    span = max(1, int(valid[-1]["observed_at"]) - start)
+    maximum = max(1.0, *(float(sample[key]) for sample in valid for key in ("read_per_second", "write_per_second")))
+    return " ".join(
+        f"{round((int(sample['observed_at']) - start) / span * 100, 2)},{round(36 - float(sample[field]) / maximum * 30, 2)}"
+        for sample in valid
+    )
 
 
 # --- 把资源阈值映射到同一 0-100 纵轴 ---

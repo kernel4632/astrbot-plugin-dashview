@@ -102,6 +102,22 @@ def test_resource_chart_uses_configured_thresholds_and_time() -> None:
     assert view["resources"][0]["critical_y"] == 7.4      # 38 - 90% * 0.34
 
 
+# --- 磁盘卡使用读写速率趋势而不是容量占用趋势 ---
+def test_disk_card_uses_io_rate_curves() -> None:
+    computer = computer_fixture()
+    computer["disk"].update({"read_per_second": 4096, "write_per_second": 2048})
+    history = {"disk": [
+        {"observed_at": computer["observed_at"] - 3_600_000, "percent": 49, "read_per_second": 1024, "write_per_second": 512},
+        {"observed_at": computer["observed_at"], "percent": 50, "read_per_second": 4096, "write_per_second": 2048},
+    ]}
+    view = build_dashboard_view(computer, history, [], None, {}, Settings(), now_ms=computer["observed_at"])
+    disk = next(item for item in view["resources"] if item["id"] == "disk")
+    assert disk["current"] == "↓ 4.0 KB/s"
+    assert disk["secondary"] == "↑ 2.0 KB/s"
+    assert disk["points"] == ""                           # 容量百分比不再作为磁盘主曲线
+    assert disk["read_points"] and disk["write_points"]   # 两条曲线均来自真实速率样本
+
+
 # --- 主动关闭模型监控不让其他健康领域变成未知 ---
 def test_disabled_model_monitor_is_excluded_from_overall_health() -> None:
     computer = computer_fixture()

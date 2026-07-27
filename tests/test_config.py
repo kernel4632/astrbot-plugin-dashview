@@ -35,6 +35,13 @@ def test_model_monitor_is_enabled_by_default() -> None:
     assert Settings.from_dict({}).model_monitor_enabled is True # 安装后自动建立 24h 状态轨迹
 
 
+# --- 资源默认每小时采样并保留最近一天 ---
+def test_resource_history_defaults_to_24_hourly_samples() -> None:
+    settings = Settings.from_dict({})
+    assert settings.resource_interval_minutes == 60
+    assert settings.resource_history_size == 24
+
+
 # --- WebUI 可停用单个服务并排除指定模型 ---
 def test_settings_filters_disabled_services_and_model_patterns() -> None:
     settings = Settings.from_dict({

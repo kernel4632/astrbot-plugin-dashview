@@ -29,6 +29,7 @@ def _collect_computer_sync() -> dict[str, Any]:
     memory = psutil.virtual_memory()                        # 一次读取保证内存字段来自同一时刻
     swap = psutil.swap_memory()                             # 交换区独立展示，避免隐藏内存压力
     network = psutil.net_io_counters()                      # 累计流量用于后续采样计算速率
+    disk_io = psutil.disk_io_counters()                     # 累计磁盘字节用于计算真实读写速率
     disk_path = os.path.abspath(os.sep)                     # 默认观察系统根分区
     disk_total, disk_used, _ = shutil.disk_usage(disk_path) # 面板只需要总量与已用量
 
@@ -59,6 +60,8 @@ def _collect_computer_sync() -> dict[str, Any]:
             "used": int(disk_used),                        # 系统分区已使用字节数
             "total": int(disk_total),                      # 系统分区总字节数
             "path": disk_path,                             # 明确百分比对应哪个挂载点
+            "read": int(disk_io.read_bytes) if disk_io else None, # 全部磁盘累计读取字节
+            "written": int(disk_io.write_bytes) if disk_io else None, # 全部磁盘累计写入字节
         },
         "network": {
             "sent": int(network.bytes_sent),               # 开机以来累计发送字节数

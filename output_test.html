@@ -259,6 +259,11 @@ body {
 	color: #6a5e79;
 }
 
+.meter-value-rate {
+	font-size: 30px;
+	white-space: nowrap;
+}
+
 .meter-detail {
 	margin-top: 8px;
 	font-size: 12px;
@@ -305,7 +310,7 @@ body {
 
 .meter-curve-line {
 	fill: none;
-	stroke-width: 2.2;
+	stroke-width: 2.6;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	vector-effect: non-scaling-stroke;
@@ -328,6 +333,9 @@ body {
 }
 .meter-curve-purple.meter-curve-line {
 	stroke: #967ad2;
+}
+.meter-curve-orange.meter-curve-line {
+	stroke: #d99a51;
 }
 
 .meter-time-axis {
@@ -959,10 +967,10 @@ body {
       </div>
       <div class="meter-value">36.4%</div>
       <div class="meter-detail">16 线程</div>
-      <div class="meter-sample">6 次采样 · 平均 35.4%</div>
+      <div class="meter-sample">24/24 小时 · 平均 38.8%</div>
       <div class="meter-wave">
         <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="CPU趋势">
-          <polyline points="0.0,29.84 20.0,27.46 40.0,20.32 60.0,24.06 80.0,28.48 100.0,25.62" class="meter-curve-line meter-curve-cyan"></polyline>
+          <path d="M 0 31.2 Q 0 31.2 2.175 28.99 Q 4.35 26.78 6.525 25.93 Q 8.7 25.08 10.87 24.23 Q 13.04 23.38 15.215 22.53 Q 17.39 21.68 19.565 22.19 Q 21.74 22.7 23.915 25.59 Q 26.09 28.48 28.26 27.63 Q 30.43 26.78 32.605 25.93 Q 34.78 25.08 36.955 24.23 Q 39.13 23.38 41.305 23.89 Q 43.48 24.4 45.655 22.19 Q 47.83 19.98 50 24.23 Q 52.17 28.48 54.345 27.63 Q 56.52 26.78 58.695 25.93 Q 60.87 25.08 63.045 25.59 Q 65.22 26.1 67.395 23.89 Q 69.57 21.68 71.74 20.83 Q 73.91 19.98 76.085 24.23 Q 78.26 28.48 80.435 27.63 Q 82.61 26.78 84.785 27.29 Q 86.96 27.8 89.13 25.59 Q 91.3 23.38 93.475 22.53 Q 95.65 21.68 97.825 20.83 T 100 19.98" class="meter-curve-line meter-curve-cyan"></path>
         </svg>
       </div>
     </article>
@@ -973,10 +981,10 @@ body {
       </div>
       <div class="meter-value">68.2%</div>
       <div class="meter-detail">21.8 GB / 32.0 GB</div>
-      <div class="meter-sample">6 次采样 · 平均 64.4%</div>
+      <div class="meter-sample">24/24 小时 · 平均 61.8%</div>
       <div class="meter-wave">
         <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="内存趋势">
-          <polyline points="0.0,17.6 20.0,16.92 40.0,16.24 60.0,15.9 80.0,15.22 100.0,14.81" class="meter-curve-line meter-curve-mint"></polyline>
+          <path d="M 0 18.28 Q 0 18.28 2.175 18.705 Q 4.35 19.13 6.525 19.03 Q 8.7 18.93 10.87 18.845 Q 13.04 18.76 15.215 18.655 Q 17.39 18.55 19.565 18.45 Q 21.74 18.35 23.915 18.265 Q 26.09 18.18 28.26 17.565 Q 30.43 16.95 32.605 17.375 Q 34.78 17.8 36.955 17.7 Q 39.13 17.6 41.305 17.515 Q 43.48 17.43 45.655 17.345 Q 47.83 17.26 50 17.16 Q 52.17 17.06 54.345 16.975 Q 56.52 16.89 58.695 16.275 Q 60.87 15.66 63.045 16.085 Q 65.22 16.51 67.395 16.41 Q 69.57 16.31 71.74 16.225 Q 73.91 16.14 76.085 16.035 Q 78.26 15.93 80.435 15.83 Q 82.61 15.73 84.785 15.645 Q 86.96 15.56 89.13 14.965 Q 91.3 14.37 93.475 14.78 Q 95.65 15.19 97.825 15.085 T 100 14.98" class="meter-curve-line meter-curve-mint"></path>
         </svg>
       </div>
     </article>
@@ -985,12 +993,13 @@ body {
         <span class="meter-dot meter-dot-purple"></span>
         <span class="meter-name">磁盘</span>
       </div>
-      <div class="meter-value">83.7%</div>
-      <div class="meter-detail">402.0 GB / 480.0 GB</div>
-      <div class="meter-sample">6 次采样 · 平均 81.9%</div>
+      <div class="meter-value meter-value-rate">↓ 17.5 MB/s</div>
+<div class="meter-detail">↑ 6.9 MB/s</div>      <div class="meter-detail">容量占用 83.7%</div>
+      <div class="meter-sample">24/24 小时</div>
       <div class="meter-wave">
-        <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="磁盘趋势">
-          <polyline points="0.0,10.77 20.0,10.53 40.0,10.26 60.0,9.98 80.0,9.78 100.0,9.54" class="meter-curve-line meter-curve-purple"></polyline>
+        <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="磁盘读写速率趋势">
+          <path d="M 0 33.46 Q 0 33.46 2.175 31.425 Q 4.35 29.39 6.525 27.355 Q 8.7 25.32 10.87 23.285 Q 13.04 21.25 15.215 19.22 Q 17.39 17.19 19.565 25.325 Q 21.74 33.46 23.915 31.425 Q 26.09 29.39 28.26 19.73 Q 30.43 10.07 32.605 15.66 Q 34.78 21.25 36.955 19.22 Q 39.13 17.19 41.305 25.325 Q 43.48 33.46 45.655 31.425 Q 47.83 29.39 50 27.355 Q 52.17 25.32 54.345 23.285 Q 56.52 21.25 58.695 19.22 Q 60.87 17.19 63.045 25.325 Q 65.22 33.46 67.395 31.425 Q 69.57 29.39 71.74 27.355 Q 73.91 25.32 76.085 15.66 Q 78.26 6 80.435 11.595 Q 82.61 17.19 84.785 25.325 Q 86.96 33.46 89.13 31.425 Q 91.3 29.39 93.475 27.355 Q 95.65 25.32 97.825 23.285 T 100 21.25" class="meter-curve-line meter-curve-purple"></path>
+          <path d="M 0 34.73 Q 0 34.73 2.175 33.46 Q 4.35 32.19 6.525 30.915 Q 8.7 29.64 10.87 28.37 Q 13.04 27.1 15.215 30.915 Q 17.39 34.73 19.565 33.46 Q 21.74 32.19 23.915 30.915 Q 26.09 29.64 28.26 28.37 Q 30.43 27.1 32.605 30.915 Q 34.78 34.73 36.955 33.46 Q 39.13 32.19 41.305 30.915 Q 43.48 29.64 45.655 23.285 Q 47.83 16.93 50 25.83 Q 52.17 34.73 54.345 33.46 Q 56.52 32.19 58.695 30.915 Q 60.87 29.64 63.045 28.37 Q 65.22 27.1 67.395 30.915 Q 69.57 34.73 71.74 33.46 Q 73.91 32.19 76.085 30.915 Q 78.26 29.64 80.435 28.37 Q 82.61 27.1 84.785 25.83 Q 86.96 24.56 89.13 28.375 Q 91.3 32.19 93.475 30.915 Q 95.65 29.64 97.825 28.37 T 100 27.1" class="meter-curve-line meter-curve-orange"></path>
         </svg>
       </div>
     </article>

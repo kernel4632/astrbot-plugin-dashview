@@ -256,6 +256,11 @@ body {
 	color: #6a5e79;
 }
 
+.meter-value-rate {
+	font-size: 30px;
+	white-space: nowrap;
+}
+
 .meter-detail {
 	margin-top: 8px;
 	font-size: 12px;
@@ -302,7 +307,7 @@ body {
 
 .meter-curve-line {
 	fill: none;
-	stroke-width: 2.2;
+	stroke-width: 2.6;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	vector-effect: non-scaling-stroke;
@@ -325,6 +330,9 @@ body {
 }
 .meter-curve-purple.meter-curve-line {
 	stroke: #967ad2;
+}
+.meter-curve-orange.meter-curve-line {
+	stroke: #d99a51;
 }
 
 .meter-time-axis {

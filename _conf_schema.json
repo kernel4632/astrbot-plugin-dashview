@@ -72,15 +72,16 @@
   },
   "resource_interval_minutes": {
     "description": "资源采样间隔（分钟）",
-    "hint": "0 关闭后台采样；手动查看仍会记录一个真实样本。",
+    "hint": "默认每小时一次，形成最近 24 小时趋势；0 关闭后台采样。手动查看会更新当前小时样本。",
     "type": "float",
-    "default": 10.0,
+    "default": 60.0,
     "slider": {"min": 0, "max": 1440, "step": 5}
   },
   "resource_history_size": {
-    "description": "每项资源保留样本数",
+    "description": "每项资源保留小时数",
+    "hint": "同一小时多次采样只保留最新一次；默认展示最近 24 小时。",
     "type": "int",
-    "default": 72,
+    "default": 24,
     "slider": {"min": 2, "max": 288, "step": 1}
   },
   "model_monitor_enabled": {

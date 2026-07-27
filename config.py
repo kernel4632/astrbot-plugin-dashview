@@ -56,8 +56,8 @@ class Settings:
     services_configured: bool = False                       # 区分未配置和全部暂时停用
     service_timeout: float = 5.0                            # 单个服务允许等待的秒数
     service_concurrency: int = 8                            # 同时检测的服务上限
-    resource_interval_minutes: float = 10.0                 # 后台资源采样间隔，0 表示关闭
-    resource_history_size: int = 72                         # 每项资源最多保留的真实样本数
+    resource_interval_minutes: float = 60.0                 # 默认每小时采样，形成最近 24 小时趋势
+    resource_history_size: int = 24                         # 每项资源最多保留 24 个小时桶
     model_monitor_enabled: bool = True                      # 默认建立每小时一次的 24h API 模型监控
     model_exclude_patterns: tuple[str, ...] = field(default_factory=tuple) # 不产生探测调用的路由通配符
     model_timeout: float = 30.0                             # 单条模型探测允许等待的秒数
@@ -98,8 +98,8 @@ class Settings:
             services_configured=services_configured,
             service_timeout=_number(config.get("service_timeout", config.get("timeout")), 5.0, 0.5, 30.0),
             service_concurrency=int(_number(config.get("service_concurrency"), 8, 1, 32)),
-            resource_interval_minutes=_number(config.get("resource_interval_minutes", config.get("resource_collect_interval_minutes")), 10.0, 0.0, 1440.0),
-            resource_history_size=int(_number(config.get("resource_history_size"), 72, 2, 288)),
+            resource_interval_minutes=_number(config.get("resource_interval_minutes", config.get("resource_collect_interval_minutes")), 60.0, 0.0, 1440.0),
+            resource_history_size=int(_number(config.get("resource_history_size"), 24, 2, 288)),
             model_monitor_enabled=_boolean(config.get("model_monitor_enabled"), True),
             model_exclude_patterns=model_exclusions,
             model_timeout=_number(config.get("model_timeout"), 30.0, 3.0, 120.0),

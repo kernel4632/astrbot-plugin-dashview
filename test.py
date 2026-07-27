@@ -42,26 +42,29 @@ def build_computer() -> dict:
         "cpu": {"percent": 36.4, "logical_count": 16},
         "memory": {"percent": 68.2, "used": 23_430_000_000, "total": 34_360_000_000},
         "swap": {"percent": 12.5, "used": 1_070_000_000, "total": 8_590_000_000},
-        "disk": {"percent": 83.7, "used": 431_640_000_000, "total": 515_400_000_000, "path": "/"},
+        "disk": {"percent": 83.7, "used": 431_640_000_000, "total": 515_400_000_000, "path": "/", "read": 8_000_000_000_000, "written": 5_000_000_000_000, "read_per_second": 18_400_000, "write_per_second": 7_200_000},
         "network": {"sent": 918_000_000_000, "received": 2_340_000_000_000, "sent_per_second": 821_000, "received_per_second": 4_280_000},
     }
 
 
-# --- 构造四项真实资源历史 ---
+# --- 构造最近 24 小时真实资源历史 ---
 def build_resource_history(computer: dict) -> dict:
-    values = {
-        "cpu": [24, 31, 52, 41, 28, 36.4],
-        "memory": [60, 62, 64, 65, 67, 68.2],
-        "swap": [8, 8, 9, 10, 11, 12.5],
-        "disk": [80.1, 80.8, 81.6, 82.4, 83.0, 83.7],
-    }
-    return {
-        resource_id: [
-            {"observed_at": computer["observed_at"] - (len(series) - index) * 600_000, "percent": percent}
-            for index, percent in enumerate(series)
-        ]
-        for resource_id, series in values.items()
-    }
+    observed_at = computer["observed_at"]
+    cpu = [28 + (index % 6) * 5 + (-8 if index % 5 == 0 else 0) for index in range(24)]
+    memory = [55 + index * 0.55 + (3 if index % 7 == 0 else 0) for index in range(24)]
+    swap = [8 + index * 0.18 for index in range(24)]
+    disk_read = [2_000_000 + (index % 5) * 3_200_000 + (12_000_000 if index in {7, 18} else 0) for index in range(24)]
+    disk_write = [1_000_000 + (index % 4) * 2_000_000 + (8_000_000 if index in {11, 20} else 0) for index in range(24)]
+    history = {}
+    for resource_id, series in {"cpu": cpu, "memory": memory, "swap": swap}.items():
+        history[resource_id] = [{"observed_at": observed_at - (23 - index) * 3_600_000, "percent": round(percent, 1)} for index, percent in enumerate(series)]
+    history["disk"] = [{
+        "observed_at": observed_at - (23 - index) * 3_600_000,
+        "percent": round(80.1 + index * 0.16, 1),
+        "read_per_second": disk_read[index],
+        "write_per_second": disk_write[index],
+    } for index in range(24)]
+    return history
 
 
 # --- 构造服务检测事实 ---

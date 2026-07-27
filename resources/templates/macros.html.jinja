@@ -32,13 +32,19 @@
         <span class="meter-dot meter-dot-{{ color }}"></span>
         <span class="meter-name">{{ item.label }}</span>
       </div>
-      <div class="meter-value">{{ item.current }}</div>
+      <div class="meter-value{% if item.id == 'disk' %} meter-value-rate{% endif %}">{{ item.current }}</div>
+      {% if item.secondary %}<div class="meter-detail">{{ item.secondary }}</div>{% endif %}
       <div class="meter-detail">{{ item.detail }}</div>
-      <div class="meter-sample">{{ item.sample_count }} 次采样 · 平均 {{ item.average }}</div>
+      <div class="meter-sample">{{ item.sample_count }}/24 小时{% if item.id != 'disk' %} · 平均 {{ item.average }}{% endif %}</div>
       <div class="meter-wave">
-        {% if item.points %}
+        {% if item.id == 'disk' and item.read_points %}
+        <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="磁盘读写速率趋势">
+          <path d="{{ item.read_curve_path }}" class="meter-curve-line meter-curve-purple"></path>
+          <path d="{{ item.write_curve_path }}" class="meter-curve-line meter-curve-orange"></path>
+        </svg>
+        {% elif item.points %}
         <svg class="meter-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="{{ item.label }}趋势">
-          <polyline points="{{ item.points }}" class="meter-curve-line meter-curve-{{ color }}"></polyline>
+          <path d="{{ item.curve_path }}" class="meter-curve-line meter-curve-{{ color }}"></path>
         </svg>
         {% else %}
         <div class="meter-empty">首次采样，等待趋势数据</div>

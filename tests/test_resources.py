@@ -17,7 +17,7 @@ def snapshot(observed_at: int, sent: int) -> dict[str, Any]:
         "cpu": {"percent": 20},
         "memory": {"percent": 30},
         "swap": {"percent": 0},
-        "disk": {"percent": 40},
+        "disk": {"percent": 40, "read": sent * 2, "written": sent * 3},
     }
 
 
@@ -61,3 +61,31 @@ async def test_sampling_lock_serializes_collection_and_commit(monkeypatch) -> No
     assert peak_active == 1                                 # 采集本身也被单飞保护
     assert current["latest_computer"]["observed_at"] == 2_000
     assert current["latest_computer"]["network"]["sent_per_second"] == 100
+    assert current["latest_computer"]["disk"]["read_per_second"] == 200
+    assert current["latest_computer"]["disk"]["write_per_second"] == 300
+
+
+# --- 同一小时的手动采样不会挤掉 24 小时窗口 ---
+async def test_resource_history_keeps_latest_sample_per_hour(monkeypatch) -> None:
+    values: dict[str, Any] = {}
+    snapshots = [snapshot(3_600_000 + 1_000, 100), snapshot(3_600_000 + 2_000, 200)]
+
+    async def read(key: str, default: Any) -> Any:
+        return values.get(key, default)
+
+    async def write(key: str, value: Any) -> None:
+        values[key] = value
+
+    async def collect() -> dict[str, Any]:
+        return snapshots.pop(0)
+
+    monkeypatch.setattr(resources_module, "collect_computer", collect)
+    state = DashboardState(read, write)
+    lock = asyncio.Lock()
+    await sample_resources(state, Settings(), lock)
+    await sample_resources(state, Settings(), lock)
+
+    current = await state.read()
+    assert len(current["resource_history"]["cpu"]) == 1
+    assert current["resource_history"]["cpu"][0]["observed_at"] == 3_602_000
+    assert current["resource_history"]["disk"][0]["read_per_second"] == 200
