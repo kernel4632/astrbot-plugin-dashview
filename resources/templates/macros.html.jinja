@@ -52,8 +52,7 @@
 
 
 {% macro services_monitor(d) %}
-<div class="monitor-group">
-  <section class="panel-card services-panel">
+<section class="panel-card services-panel">
     <div class="section-head compact">
       <div>
         <div class="section-kicker">Service Monitor</div>
@@ -84,30 +83,7 @@
       {% endfor %}
     </div>
     {% endif %}
-  </section>
-
-  <section class="panel-card details-panel">
-    <div class="section-head compact">
-      <div>
-        <div class="section-kicker">System Detail</div>
-        <h2 class="section-title">系统信息</h2>
-      </div>
-    </div>
-    <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">运行环境</div>
-        <div class="info-value">{{ d.host.system }}</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">运行时间</div>
-        <div class="info-value">{{ d.host.uptime }}</div>
-      </div>
-      <div class="info-item info-summary">
-        <div class="info-summary-text">{{ d.conclusion }}</div>
-      </div>
-    </div>
-  </section>
-</div>
+</section>
 {% endmacro %}
 
 
@@ -140,20 +116,19 @@
     {% for model in d.models.rows %}
     {% set status = 'ok' if model.visual_state == 'healthy' else 'slow' if model.visual_state == 'degraded' else 'error' if model.visual_state == 'critical' else 'empty' %}
     <article class="model-provider-card">
-      <header class="model-provider-head">
-        <div class="model-provider-mark">{{ model.model_name[:1] | upper }}</div>
-        <div class="model-provider-info">
-          <div class="model-provider-name">{{ model.model_name }}</div>
-          <div class="model-provider-sub">{{ model.identity_hint or model.reason }}</div>
-        </div>
-        <div class="model-provider-badge model-status-{{ status }}">{{ '正常' if status == 'ok' else '较慢' if status == 'slow' else '异常' if status == 'error' else '未知' }}</div>
-      </header>
       <div class="model-row-list">
         <div class="model-row-card model-row-{{ status }}">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-{{ status }}"></span>
+              <span class="model-name-text">{{ model.model_name }}</span>
+            </div>
+            <span class="model-status-badge model-status-{{ status }}">{{ '正常' if status == 'ok' else '较慢' if status == 'slow' else '异常' if status == 'error' else '未知' }}</span>
+          </div>
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="{{ model.model_name }} 延迟历史">
-              {% for segment in model.history_chart.curve_segments %}
-              <polyline points="{{ segment }}" class="model-curve-line model-curve-{{ status }}"></polyline>
+              {% for segment in model.history_chart.curve_paths %}
+              <path d="{{ segment }}" class="model-curve-line model-curve-{{ status }}"></path>
               {% endfor %}
             </svg>
             <div class="model-time-axis">

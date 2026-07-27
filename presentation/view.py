@@ -228,9 +228,26 @@ def _model_history_chart(slots: list[dict[str, Any]], slow_ms: int) -> dict[str,
     return {
         "slots": slots,                                   # 24 格完整表达正常、慢、失败和缺测
         "curve_segments": segments,                       # 延迟线绝不跨越未知或失败小时
+        "curve_paths": [_smooth_curve_path(segment) for segment in segments], # 圆滑路径弱化尖锐波峰波谷
         "slow_y": slow_y,                                 # 横向阈值线帮助识别延迟恶化
         "time_labels": [_axis_time_text(slots[0]["bucket_start"]), _axis_time_text(slots[11]["bucket_start"]), _axis_time_text(slots[-1]["bucket_start"])],
     }
+
+
+# --- 把连续折线点转换成平滑二次贝塞尔路径 ---
+def _smooth_curve_path(segment: str) -> str:
+    points = [tuple(float(value) for value in point.split(",")) for point in segment.split()]
+    if len(points) < 2:
+        return ""                                          # 单点无法形成趋势曲线
+    commands = [f"M {points[0][0]:g} {points[0][1]:g}"]
+    for index in range(1, len(points)):
+        previous_x, previous_y = points[index - 1]
+        current_x, current_y = points[index]
+        middle_x = (previous_x + current_x) / 2
+        middle_y = (previous_y + current_y) / 2
+        commands.append(f"Q {previous_x:g} {previous_y:g} {middle_x:g} {middle_y:g}")
+    commands.append(f"T {points[-1][0]:g} {points[-1][1]:g}")
+    return " ".join(commands)
 
 
 # --- 验证一条模型历史样本 ---

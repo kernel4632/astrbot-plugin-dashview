@@ -822,7 +822,7 @@ body {
 
 .model-curve-line {
 	fill: none;
-	stroke-width: 2.4;
+	stroke-width: 3.2;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	vector-effect: non-scaling-stroke;
@@ -997,8 +997,7 @@ body {
   </div>
 </div>
 
-        <div class="monitor-group">
-  <section class="panel-card services-panel">
+        <section class="panel-card services-panel">
     <div class="section-head compact">
       <div>
         <div class="section-kicker">Service Monitor</div>
@@ -1067,30 +1066,7 @@ body {
         </div>
       </article>
     </div>
-  </section>
-
-  <section class="panel-card details-panel">
-    <div class="section-head compact">
-      <div>
-        <div class="section-kicker">System Detail</div>
-        <h2 class="section-title">系统信息</h2>
-      </div>
-    </div>
-    <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">运行环境</div>
-        <div class="info-value">Linux 6.8.0</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">运行时间</div>
-        <div class="info-value">9天 5小时</div>
-      </div>
-      <div class="info-item info-summary">
-        <div class="info-summary-text">阿柯死了</div>
-      </div>
-    </div>
-  </section>
-</div>
+</section>
 
         <section class="panel-card model-panel">
   <div class="section-head compact">
@@ -1114,20 +1090,19 @@ body {
 
   <div class="model-provider-grid">
     <article class="model-provider-card">
-      <header class="model-provider-head">
-        <div class="model-provider-mark">D</div>
-        <div class="model-provider-info">
-          <div class="model-provider-name">deepseek-chat</div>
-          <div class="model-provider-sub">超过 30 秒未响应</div>
-        </div>
-        <div class="model-provider-badge model-status-error">异常</div>
-      </header>
       <div class="model-row-list">
         <div class="model-row-card model-row-error">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-error"></span>
+              <span class="model-name-text">deepseek-chat</span>
+            </div>
+            <span class="model-status-badge model-status-error">异常</span>
+          </div>
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="deepseek-chat 延迟历史">
-              <polyline points="2.08,29.11 6.25,29.11 10.42,29.11 14.58,29.11 18.75,29.11 22.92,29.11 27.08,29.11 31.25,29.11 35.42,29.11" class="model-curve-line model-curve-error"></polyline>
-              <polyline points="43.75,29.11 47.92,29.11 52.08,29.11 56.25,29.11 60.42,29.11 64.58,29.11 68.75,29.11 72.92,29.11 77.08,9.0 81.25,29.11 85.42,29.11 89.58,29.11 93.75,29.11" class="model-curve-line model-curve-error"></polyline>
+              <path d="M 2.08 29.11 Q 2.08 29.11 4.165 29.11 Q 6.25 29.11 8.335 29.11 Q 10.42 29.11 12.5 29.11 Q 14.58 29.11 16.665 29.11 Q 18.75 29.11 20.835 29.11 Q 22.92 29.11 25 29.11 Q 27.08 29.11 29.165 29.11 Q 31.25 29.11 33.335 29.11 T 35.42 29.11" class="model-curve-line model-curve-error"></path>
+              <path d="M 43.75 29.11 Q 43.75 29.11 45.835 29.11 Q 47.92 29.11 50 29.11 Q 52.08 29.11 54.165 29.11 Q 56.25 29.11 58.335 29.11 Q 60.42 29.11 62.5 29.11 Q 64.58 29.11 66.665 29.11 Q 68.75 29.11 70.835 29.11 Q 72.92 29.11 75 19.055 Q 77.08 9 79.165 19.055 Q 81.25 29.11 83.335 29.11 Q 85.42 29.11 87.5 29.11 Q 89.58 29.11 91.665 29.11 T 93.75 29.11" class="model-curve-line model-curve-error"></path>
             </svg>
             <div class="model-time-axis">
 <span>07-26 03:00</span><span>07-26 14:00</span><span>07-27 02:00</span>            </div>
@@ -1162,19 +1137,18 @@ body {
       </div>
     </article>
     <article class="model-provider-card">
-      <header class="model-provider-head">
-        <div class="model-provider-mark">C</div>
-        <div class="model-provider-info">
-          <div class="model-provider-name">claude-sonnet-4</div>
-          <div class="model-provider-sub">响应较慢</div>
-        </div>
-        <div class="model-provider-badge model-status-slow">较慢</div>
-      </header>
       <div class="model-row-list">
         <div class="model-row-card model-row-slow">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-slow"></span>
+              <span class="model-name-text">claude-sonnet-4</span>
+            </div>
+            <span class="model-status-badge model-status-slow">较慢</span>
+          </div>
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="claude-sonnet-4 延迟历史">
-              <polyline points="2.08,29.19 6.25,29.19 10.42,29.19 14.58,29.19 18.75,29.19 22.92,29.19 27.08,29.19 31.25,9.0 35.42,29.19 39.58,29.19 43.75,29.19 47.92,29.19 52.08,29.19 56.25,29.19 60.42,29.19 64.58,9.0 68.75,29.19 72.92,29.19 77.08,29.19 81.25,29.19 85.42,29.19 89.58,29.19 93.75,29.19 97.92,9.0" class="model-curve-line model-curve-slow"></polyline>
+              <path d="M 2.08 29.19 Q 2.08 29.19 4.165 29.19 Q 6.25 29.19 8.335 29.19 Q 10.42 29.19 12.5 29.19 Q 14.58 29.19 16.665 29.19 Q 18.75 29.19 20.835 29.19 Q 22.92 29.19 25 29.19 Q 27.08 29.19 29.165 19.095 Q 31.25 9 33.335 19.095 Q 35.42 29.19 37.5 29.19 Q 39.58 29.19 41.665 29.19 Q 43.75 29.19 45.835 29.19 Q 47.92 29.19 50 29.19 Q 52.08 29.19 54.165 29.19 Q 56.25 29.19 58.335 29.19 Q 60.42 29.19 62.5 19.095 Q 64.58 9 66.665 19.095 Q 68.75 29.19 70.835 29.19 Q 72.92 29.19 75 29.19 Q 77.08 29.19 79.165 29.19 Q 81.25 29.19 83.335 29.19 Q 85.42 29.19 87.5 29.19 Q 89.58 29.19 91.665 29.19 Q 93.75 29.19 95.835 19.095 T 97.92 9" class="model-curve-line model-curve-slow"></path>
             </svg>
             <div class="model-time-axis">
 <span>07-26 03:00</span><span>07-26 14:00</span><span>07-27 02:00</span>            </div>
@@ -1209,19 +1183,18 @@ body {
       </div>
     </article>
     <article class="model-provider-card">
-      <header class="model-provider-head">
-        <div class="model-provider-mark">G</div>
-        <div class="model-provider-info">
-          <div class="model-provider-name">gpt-4o</div>
-          <div class="model-provider-sub">响应正确</div>
-        </div>
-        <div class="model-provider-badge model-status-ok">正常</div>
-      </header>
       <div class="model-row-list">
         <div class="model-row-card model-row-ok">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-ok"></span>
+              <span class="model-name-text">gpt-4o</span>
+            </div>
+            <span class="model-status-badge model-status-ok">正常</span>
+          </div>
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="gpt-4o 延迟历史">
-              <polyline points="2.08,30.12 6.25,30.12 10.42,30.12 14.58,30.12 18.75,30.12 22.92,30.12 27.08,30.12 31.25,30.12 35.42,30.12 39.58,30.12 43.75,30.12 47.92,30.12 52.08,30.12 56.25,30.12 60.42,30.12 64.58,30.12 68.75,30.12 72.92,30.12 77.08,30.12 81.25,30.12 85.42,30.12 89.58,30.12 93.75,30.12 97.92,30.12" class="model-curve-line model-curve-ok"></polyline>
+              <path d="M 2.08 30.12 Q 2.08 30.12 4.165 30.12 Q 6.25 30.12 8.335 30.12 Q 10.42 30.12 12.5 30.12 Q 14.58 30.12 16.665 30.12 Q 18.75 30.12 20.835 30.12 Q 22.92 30.12 25 30.12 Q 27.08 30.12 29.165 30.12 Q 31.25 30.12 33.335 30.12 Q 35.42 30.12 37.5 30.12 Q 39.58 30.12 41.665 30.12 Q 43.75 30.12 45.835 30.12 Q 47.92 30.12 50 30.12 Q 52.08 30.12 54.165 30.12 Q 56.25 30.12 58.335 30.12 Q 60.42 30.12 62.5 30.12 Q 64.58 30.12 66.665 30.12 Q 68.75 30.12 70.835 30.12 Q 72.92 30.12 75 30.12 Q 77.08 30.12 79.165 30.12 Q 81.25 30.12 83.335 30.12 Q 85.42 30.12 87.5 30.12 Q 89.58 30.12 91.665 30.12 Q 93.75 30.12 95.835 30.12 T 97.92 30.12" class="model-curve-line model-curve-ok"></path>
             </svg>
             <div class="model-time-axis">
 <span>07-26 03:00</span><span>07-26 14:00</span><span>07-27 02:00</span>            </div>
@@ -1256,19 +1229,18 @@ body {
       </div>
     </article>
     <article class="model-provider-card">
-      <header class="model-provider-head">
-        <div class="model-provider-mark">G</div>
-        <div class="model-provider-info">
-          <div class="model-provider-name">gemini-2.5-flash</div>
-          <div class="model-provider-sub">响应正确</div>
-        </div>
-        <div class="model-provider-badge model-status-ok">正常</div>
-      </header>
       <div class="model-row-list">
         <div class="model-row-card model-row-ok">
+          <div class="model-row-top">
+            <div class="model-name-wrap">
+              <span class="model-dot model-dot-ok"></span>
+              <span class="model-name-text">gemini-2.5-flash</span>
+            </div>
+            <span class="model-status-badge model-status-ok">正常</span>
+          </div>
           <div class="model-curve-box">
             <svg class="model-curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="gemini-2.5-flash 延迟历史">
-              <polyline points="2.08,31.88 6.25,31.88 10.42,31.88 14.58,31.88 18.75,31.88 22.92,31.88 27.08,31.88 31.25,31.88 35.42,31.88 39.58,31.88 43.75,31.88 47.92,31.88 52.08,31.88 56.25,31.88 60.42,31.88 64.58,31.88 68.75,31.88 72.92,31.88 77.08,31.88 81.25,31.88 85.42,31.88 89.58,31.88 93.75,31.88 97.92,31.88" class="model-curve-line model-curve-ok"></polyline>
+              <path d="M 2.08 31.88 Q 2.08 31.88 4.165 31.88 Q 6.25 31.88 8.335 31.88 Q 10.42 31.88 12.5 31.88 Q 14.58 31.88 16.665 31.88 Q 18.75 31.88 20.835 31.88 Q 22.92 31.88 25 31.88 Q 27.08 31.88 29.165 31.88 Q 31.25 31.88 33.335 31.88 Q 35.42 31.88 37.5 31.88 Q 39.58 31.88 41.665 31.88 Q 43.75 31.88 45.835 31.88 Q 47.92 31.88 50 31.88 Q 52.08 31.88 54.165 31.88 Q 56.25 31.88 58.335 31.88 Q 60.42 31.88 62.5 31.88 Q 64.58 31.88 66.665 31.88 Q 68.75 31.88 70.835 31.88 Q 72.92 31.88 75 31.88 Q 77.08 31.88 79.165 31.88 Q 81.25 31.88 83.335 31.88 Q 85.42 31.88 87.5 31.88 Q 89.58 31.88 91.665 31.88 Q 93.75 31.88 95.835 31.88 T 97.92 31.88" class="model-curve-line model-curve-ok"></path>
             </svg>
             <div class="model-time-axis">
 <span>07-26 03:00</span><span>07-26 14:00</span><span>07-27 02:00</span>            </div>

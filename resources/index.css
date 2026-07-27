@@ -819,7 +819,7 @@ body {
 
 .model-curve-line {
 	fill: none;
-	stroke-width: 2.4;
+	stroke-width: 3.2;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 	vector-effect: non-scaling-stroke;
