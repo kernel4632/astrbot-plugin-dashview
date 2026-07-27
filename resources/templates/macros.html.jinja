@@ -32,8 +32,7 @@
         <span class="meter-dot meter-dot-{{ color }}"></span>
         <span class="meter-name">{{ item.label }}</span>
       </div>
-      <div class="meter-value{% if item.id == 'disk' %} meter-value-rate{% endif %}">{{ item.current }}</div>
-      {% if item.secondary %}<div class="meter-detail">{{ item.secondary }}</div>{% endif %}
+      <div class="meter-value">{{ item.current }}</div>
       <div class="meter-detail">{{ item.detail }}</div>
       <div class="meter-sample">{{ item.sample_count }}/24 小时{% if item.id != 'disk' %} · 平均 {{ item.average }}{% endif %}</div>
       <div class="meter-wave">

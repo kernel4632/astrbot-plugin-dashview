@@ -112,8 +112,8 @@ def test_disk_card_uses_io_rate_curves() -> None:
     ]}
     view = build_dashboard_view(computer, history, [], None, {}, Settings(), now_ms=computer["observed_at"])
     disk = next(item for item in view["resources"] if item["id"] == "disk")
-    assert disk["current"] == "↓ 4.0 KB/s"
-    assert disk["secondary"] == "↑ 2.0 KB/s"
+    assert disk["current"] == "50.0%"
+    assert disk["detail"] == "↓ 4.0 KB/s · ↑ 2.0 KB/s"
     assert disk["points"] == ""                           # 容量百分比不再作为磁盘主曲线
     assert disk["read_points"] and disk["write_points"]   # 两条曲线均来自真实速率样本
 

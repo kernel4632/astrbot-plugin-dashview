@@ -102,9 +102,7 @@ def _build_resources(computer: dict[str, Any], history: dict[str, list[dict[str,
             read_rate = current.get("read_per_second")
             write_rate = current.get("write_per_second")
             resource_view.update({
-                "current": f"↓ {_bytes_text(read_rate, '/s')}",
-                "secondary": f"↑ {_bytes_text(write_rate, '/s')}",
-                "detail": f"容量占用 {_percent_text(percent)}",
+                "detail": f"↓ {_bytes_text(read_rate, '/s')} · ↑ {_bytes_text(write_rate, '/s')}",
                 "points": "",
                 "read_points": _disk_rate_curve_points(samples, "read_per_second"),
                 "write_points": _disk_rate_curve_points(samples, "write_per_second"),

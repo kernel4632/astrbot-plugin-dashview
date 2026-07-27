@@ -256,11 +256,6 @@ body {
 	color: #6a5e79;
 }
 
-.meter-value-rate {
-	font-size: 30px;
-	white-space: nowrap;
-}
-
 .meter-detail {
 	margin-top: 8px;
 	font-size: 12px;
